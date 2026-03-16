@@ -21,7 +21,7 @@
 
 当前仓库已经包含可直接发布的静态 Demo：
 
-- [prototype/gaiming-juchang-mvp/index.html](/Users/wizout/op/openclaw/prototype/gaiming-juchang-mvp/index.html)
+- [prototype/gaiming-juchang-mvp/index.html](prototype/gaiming-juchang-mvp/index.html)
 
 ## 当前公开 Demo
 
@@ -88,7 +88,7 @@ python3 -m http.server 8080
 
 工作流见：
 
-- [.github/workflows/pages.yml](/Users/wizout/op/openclaw/.github/workflows/pages.yml)
+- [.github/workflows/pages.yml](.github/workflows/pages.yml)
 
 推送到 GitHub 后：
 
@@ -105,14 +105,14 @@ python3 -m http.server 8080
 
 贡献说明见：
 
-- [CONTRIBUTING.md](/Users/wizout/op/openclaw/CONTRIBUTING.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 版本与路线
 
-- [CHANGELOG.md](/Users/wizout/op/openclaw/CHANGELOG.md)
-- [ROADMAP.md](/Users/wizout/op/openclaw/ROADMAP.md)
-- [LAUNCH_COPY_PACK.md](/Users/wizout/op/openclaw/docs/LAUNCH_COPY_PACK.md)
-- [GITHUB_LAUNCH_CHECKLIST.md](/Users/wizout/op/openclaw/docs/GITHUB_LAUNCH_CHECKLIST.md)
+- [CHANGELOG.md](CHANGELOG.md)
+- [ROADMAP.md](ROADMAP.md)
+- [LAUNCH_COPY_PACK.md](docs/LAUNCH_COPY_PACK.md)
+- [GITHUB_LAUNCH_CHECKLIST.md](docs/GITHUB_LAUNCH_CHECKLIST.md)
 
 ## 版权边界
 
@@ -124,10 +124,10 @@ python3 -m http.server 8080
 
 请先阅读：
 
-- [COPYRIGHT_POLICY.md](/Users/wizout/op/openclaw/COPYRIGHT_POLICY.md)
-- [ASSET_LICENSES.md](/Users/wizout/op/openclaw/ASSET_LICENSES.md)
+- [COPYRIGHT_POLICY.md](COPYRIGHT_POLICY.md)
+- [ASSET_LICENSES.md](ASSET_LICENSES.md)
 
 ## 许可证
 
-- 代码：MIT，见 [LICENSE](/Users/wizout/op/openclaw/LICENSE)
+- 代码：MIT，见 [LICENSE](LICENSE)
 - 剧本内容与素材：按 `COPYRIGHT_POLICY.md` 和 `ASSET_LICENSES.md` 执行
