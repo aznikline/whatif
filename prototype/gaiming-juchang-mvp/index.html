@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>改命剧场</title>
+    <meta
+      name="description"
+      content="进入那些最让人意难平的经典节点，亲手接管决策，看看结局会怎样被改写。"
+    />
+    <meta name="theme-color" content="#13161f" />
+    <meta property="og:title" content="改命剧场" />
+    <meta
+      property="og:description"
+      content="一个可直接试玩的互动叙事游戏原型，当前包含《麦城前夜》《鸿门宴前席》《风雪山神庙前夕》三支公开剧本。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./assets/cover.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="改命剧场" />
+    <meta
+      name="twitter:description"
+      content="进入那些最让人意难平的经典节点，亲手改写结局。"
+    />
+    <meta name="twitter:image" content="./assets/cover.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div class="hero__eyebrow">PLAYABLE GITHUB MVP</div>
+        <h1>改命剧场</h1>
+        <p class="hero__copy">
+          进入那些最让人意难平的经典节点，亲手接管决策。你不只是看剧情，而是直接决定谁活、谁输、谁背着传奇继续走下去。
+          这一版公开原型已经支持多剧本切换，验证“改命”是不是一个足够强的游戏钩子。
+        </p>
+        <div class="hero__actions">
+          <button id="start-demo" class="button button--primary">开始改命</button>
+          <button id="reset-demo" class="button button--ghost">重开当前周目</button>
+        </div>
+      </header>
+
+      <main class="stage">
+        <section class="panel panel--left">
+          <div class="script-card">
+            <div class="script-card__label">当前公开剧本</div>
+            <h2 id="script-title">麦城前夜</h2>
+            <p id="script-summary">
+              荆州已失，援军难至，麦城将陷。你将从三个关键节点切入，试着改写关羽、关平与残部的命运。
+            </p>
+            <div id="script-question" class="script-card__question">
+              活下来更重要，还是传奇更重要？
+            </div>
+            <div id="script-traits" class="script-card__traits"></div>
+            <div id="script-stats" class="script-card__stats"></div>
+          </div>
+
+          <div class="entry-panel">
+            <div class="entry-panel__title">公开剧本</div>
+            <div id="script-list" class="entry-list"></div>
+          </div>
+
+          <div class="entry-panel">
+            <div class="entry-panel__title">切入节点</div>
+            <div id="entry-list" class="entry-list"></div>
+          </div>
+
+          <div class="audience-toggle">
+            <label>
+              <input type="checkbox" id="audience-mode" checked />
+              开启观众反响模拟
+            </label>
+          </div>
+        </section>
+
+        <section class="panel panel--center">
+          <div class="scene-head">
+            <div class="scene-head__meta">
+              <span id="scene-tag" class="chip">初始节点</span>
+              <span id="scene-progress" class="chip chip--muted">第 0 幕</span>
+            </div>
+            <h2 id="scene-title">请选择一个关键节点切入</h2>
+          </div>
+
+          <article id="scene-body" class="scene-body">
+            这个原型不追求世界观铺陈，只验证一件事：当玩家进入一个大家都熟悉、也都忍不住想改的节点时，会不会立刻产生“让我试一次”的冲动。
+          </article>
+
+          <div id="scene-effects" class="scene-effects"></div>
+
+          <div class="scene-cta">
+            <div class="scene-cta__label">传播钩子</div>
+            <div id="scene-hook" class="scene-cta__copy">
+              这类节点最适合做短视频标题：如果你能在这一刻接管决策，你会救人，还是守住传奇？
+            </div>
+          </div>
+
+          <div id="choices" class="choices"></div>
+
+          <div id="ending" class="ending hidden"></div>
+        </section>
+
+        <aside class="panel panel--right">
+          <div class="npc-header">
+            <div class="npc-header__label">角色与局势</div>
+            <h2>当前状态</h2>
+          </div>
+          <div id="npc-list" class="npc-list"></div>
+
+          <div class="score-panel">
+            <div class="score-panel__label">本轮评分</div>
+            <div id="score-bars" class="score-bars"></div>
+          </div>
+
+          <div class="score-panel">
+            <div class="score-panel__label">改命档案</div>
+            <div id="archive-list" class="archive-list"></div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

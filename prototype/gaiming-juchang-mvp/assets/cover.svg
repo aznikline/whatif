@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">改命剧场：麦城前夜</title>
+  <desc id="desc">一个关于麦城前夜改命选择的互动叙事游戏原型封面。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#13161f" />
+      <stop offset="55%" stop-color="#1f1e24" />
+      <stop offset="100%" stop-color="#090a0e" />
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.25" cy="0.2" r="0.5">
+      <stop offset="0%" stop-color="#f0b15f" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#f0b15f" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.78" cy="0.3" r="0.45">
+      <stop offset="0%" stop-color="#aa5842" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#aa5842" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect width="1600" height="900" fill="url(#glowA)" />
+  <rect width="1600" height="900" fill="url(#glowB)" />
+  <g fill="none" stroke="#f0b15f" stroke-opacity="0.14">
+    <path d="M0 690 C 220 640, 330 760, 590 700 S 980 610, 1600 720" />
+    <path d="M0 760 C 240 710, 420 850, 650 790 S 1080 700, 1600 810" />
+  </g>
+  <g transform="translate(124,132)">
+    <text x="0" y="0" fill="#d0b88d" font-size="24" font-family="Georgia, 'Songti SC', serif" letter-spacing="5">PLAYABLE GITHUB MVP</text>
+    <text x="0" y="116" fill="#f8efe0" font-size="104" font-family="Georgia, 'Songti SC', serif">改命剧场</text>
+    <text x="0" y="218" fill="#f0b15f" font-size="72" font-family="Georgia, 'Songti SC', serif">麦城前夜</text>
+    <text x="0" y="308" fill="#efe2c8" font-size="34" font-family="Georgia, 'PingFang SC', serif">如果你能在麦城前夜接管决策，你能改写关羽的结局吗？</text>
+    <text x="0" y="392" fill="#ceb790" font-size="28" font-family="Georgia, 'PingFang SC', serif">多节点切入 / 多结局评分 / 可分享改命总结</text>
+  </g>
+  <g transform="translate(1120,140)">
+    <rect x="0" y="0" rx="28" ry="28" width="330" height="460" fill="#11141b" fill-opacity="0.62" stroke="#f0b15f" stroke-opacity="0.25" />
+    <text x="34" y="58" fill="#d0b88d" font-size="20" font-family="Georgia, 'PingFang SC', serif">当前公开 Demo</text>
+    <text x="34" y="112" fill="#f8efe0" font-size="44" font-family="Georgia, 'Songti SC', serif">麦城前夜</text>
+    <text x="34" y="168" fill="#f0b15f" font-size="22" font-family="Georgia, 'PingFang SC', serif">关键节点</text>
+    <text x="34" y="212" fill="#efe2c8" font-size="24" font-family="Georgia, 'PingFang SC', serif">1. 失荆州消息初到</text>
+    <text x="34" y="256" fill="#efe2c8" font-size="24" font-family="Georgia, 'PingFang SC', serif">2. 麦城前夜</text>
+    <text x="34" y="300" fill="#efe2c8" font-size="24" font-family="Georgia, 'PingFang SC', serif">3. 突围前一刻</text>
+    <text x="34" y="364" fill="#d0b88d" font-size="20" font-family="Georgia, 'PingFang SC', serif">核心问题</text>
+    <text x="34" y="408" fill="#efe2c8" font-size="22" font-family="Georgia, 'PingFang SC', serif">活下来更重要，</text>
+    <text x="34" y="440" fill="#efe2c8" font-size="22" font-family="Georgia, 'PingFang SC', serif">还是传奇更重要？</text>
+  </g>
+  <text x="124" y="824" fill="#bda988" font-size="22" font-family="Georgia, 'PingFang SC', serif">A playable interactive drama prototype for GitHub Pages</text>
+</svg>

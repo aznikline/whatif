@@ -1,0 +1,39 @@
+# Local agent state and personal workspace data
+.openclaw/
+.openclaw-state/
+.agents/
+.claude/
+.cursor/
+.trae/
+.trash/
+
+# Dependencies and generated artifacts
+node_modules/
+dist/
+build/
+coverage/
+
+# Local notes and machine-specific files
+memory/
+channels/
+experiences/
+vendor/
+skills/
+ops/
+openclawmp-skill/
+
+# Project-local config/state not needed for public repo
+openclaw.json
+seafood-lock.json
+package-lock.json
+package.json
+analyze_usage.js
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+AGENTS.md
+
+# macOS / editor noise
+.DS_Store
