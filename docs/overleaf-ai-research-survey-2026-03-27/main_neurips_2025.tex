@@ -1,0 +1,41 @@
+% This file is intended for use with the official NeurIPS 2025 author kit.
+% To compile it, place the official neurips_2025.sty file in this directory
+% or start from the official NeurIPS Overleaf project and replace its main file
+% with this one.
+
+\documentclass{article}
+
+\usepackage[preprint]{neurips_2025}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+
+\title{Toward Robust Open-Ended AI Systems}
+
+\author{
+  Author Name \\
+  Affiliation or Institution \\
+  City, Country \\
+  \texttt{author@example.com} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Recent research in Artificial Intelligence (AI) is shifting from isolated model scaling toward the design of robust, open-ended, system-level capabilities. In this setting, progress depends not only on larger models, but also on stronger evaluation protocols, architectural control, training-time regularization, retrieval, and agentic workflow design. This paper argues that reliable open-ended AI systems emerge from the coordination of three ingredients: high-fidelity evaluation of generative behavior, mechanisms that stabilize information flow and generalization, and structured multi-agent processes for planning, verification, and revision. Rather than narrating recent advances as disconnected technical improvements, the paper develops a unified argument about why modern AI systems succeed or fail under long-horizon, open-ended workloads. The central claim is that the field is moving from model-centric optimization to system-centric design, and that this transition provides a better framework for understanding both capability growth and persistent brittleness.
+\end{abstract}
+
+\input{paper_body.tex}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

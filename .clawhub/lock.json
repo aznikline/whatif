@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "skills": {
+    "ui-control-center": {
+      "version": "1.0.0",
+      "installedAt": 1774337400280
+    },
+    "skill-vetter": {
+      "version": "1.0.0",
+      "installedAt": 1774338300816
+    },
+    "xiucheng-self-improving-agent": {
+      "version": "1.0.0",
+      "installedAt": 1774338300963
+    },
+    "agent-browser-clawdbot": {
+      "version": "0.1.0",
+      "installedAt": 1774338301022
+    },
+    "humanizer": {
+      "version": "1.0.0",
+      "installedAt": 1774511369195
+    }
+  }
+}

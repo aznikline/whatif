@@ -1,0 +1,20 @@
+[
+  {
+    "id": "sample-nord-pulse",
+    "title": "Nord Pulse",
+    "artist": "OpenClaw Lab",
+    "license_status": "cleared",
+    "bpm": 128,
+    "mood": "electro",
+    "source_audio": "/ABS/PATH/TO/LICENSED_AUDIO/nord-pulse.wav"
+  },
+  {
+    "id": "sample-glacier-drive",
+    "title": "Glacier Drive",
+    "artist": "OpenClaw Lab",
+    "license_status": "review",
+    "bpm": 132,
+    "mood": "festival",
+    "source_audio": "/ABS/PATH/TO/LICENSED_AUDIO/glacier-drive.wav"
+  }
+]
