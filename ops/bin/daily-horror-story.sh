@@ -5,6 +5,11 @@ ROOT="/Users/wizout/op/openclaw"
 TODAY="${STORY_DATE_OVERRIDE:-$(date +%F)}"
 YEAR="${TODAY%%-*}"
 HARD_TIMEOUT="${DAILY_HORROR_HARD_TIMEOUT:-150}"
+TOTAL_TIMEOUT="${DAILY_HORROR_TOTAL_TIMEOUT:-220}"
+MAX_TOKENS="${DAILY_HORROR_MAX_TOKENS:-2200}"
+PRIMARY_MODEL="${DAILY_HORROR_PRIMARY_MODEL:-openrouter/xiaomi/mimo-v2-pro}"
+SECONDARY_MODEL="${DAILY_HORROR_SECONDARY_MODEL:-openrouter/stepfun/step-3.5-flash:free}"
+FALLBACK_MODEL="${DAILY_HORROR_FALLBACK_MODEL:-ollama/qwen3.5:4b}"
 STORY_DIR="$ROOT/products/daily-horror/$YEAR"
 RUN_DIR="$ROOT/products/daily-horror/.runs/$TODAY"
 OUT_FILE="$STORY_DIR/$TODAY.md"
@@ -60,6 +65,9 @@ taboo_rule="$(jq -r '.taboo_rule // empty' "$SEED_FILE")"
 job_anchor="$(jq -r '.job_anchor // empty' "$SEED_FILE")"
 imagery_anchor="$(jq -r '.imagery_anchor // empty' "$SEED_FILE")"
 style_hard_mode="$(jq -r '.style_hard_mode // empty' "$SEED_FILE")"
+narrative_skeleton_key="$(jq -r '.narrative_skeleton_key // empty' "$SEED_FILE")"
+narrative_skeleton="$(jq -r '.narrative_skeleton // empty' "$SEED_FILE")"
+sentence_pressure="$(jq -r '.sentence_pressure // empty' "$SEED_FILE")"
 random_nonce="$(jq -r '.random_nonce // empty' "$SEED_FILE")"
 recent_titles="$(
   find "$ROOT/products/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
@@ -107,6 +115,8 @@ cat > "$PROMPT_PRIMARY" <<EOF
 - 风格模板：$style_template
 - 风格硬约束：$style_hard_mode
 - 故事引擎：${story_engine}（${story_engine_prompt}）
+- 分支骨架：${narrative_skeleton_key}（${narrative_skeleton}）
+- 句法压力：${sentence_pressure}
 - 主场景框架：${scene_frame}
 - 地方禁忌：${taboo_rule}
 - 主职业锚点：${job_anchor}
@@ -127,6 +137,7 @@ cat > "$PROMPT_PRIMARY" <<EOF
 - “${imagery_anchor}” 必须在前半篇出现两次以上，并成为读者能记住的视觉/触觉钉子。
 - 如果第一反应是把产品种子写成包裹、驿站、扫码枪、快递单、系统面板，就强制放弃第一反应，改写第二种更陌生但更具体的落点。
 - 要有文学性，但别飘。句子要有压迫感、气味、材质、温度、重量。
+- 句子不要太顺滑，不要像标准回答。${sentence_pressure}
 - 可以吸收这些高层优点：普通人卷入巨大而陌生的规则；黑色幽默一点点；世界观不说破；最后一句有寒意。
 - 不要照搬任何在世作者的句法和口吻。
 
@@ -184,6 +195,8 @@ generate_once() {
   local out_text="$2"
   local out_raw="$3"
   local out_meta="$4"
+  local runner_pid=""
+  local watcher_pid=""
 
   python3 "$ROOT/ops/story/generate_story_direct.py" \
     --prompt-file "$prompt_file" \
@@ -191,9 +204,33 @@ generate_once() {
     --raw-file "$out_raw" \
     --meta-file "$out_meta" \
     --timeout "$HARD_TIMEOUT" \
+    --primary-model "$PRIMARY_MODEL" \
+    --secondary-model "$SECONDARY_MODEL" \
+    --fallback-model "$FALLBACK_MODEL" \
+    --max-tokens "$MAX_TOKENS" \
     --seed "$SEED_NUM" \
     --temperature "$TEMPERATURE" \
-    --top-p "$TOP_P"
+    --top-p "$TOP_P" &
+  runner_pid=$!
+
+  (
+    sleep "$TOTAL_TIMEOUT"
+    if kill -0 "$runner_pid" 2>/dev/null; then
+      kill -TERM "$runner_pid" 2>/dev/null || true
+      sleep 5
+      kill -KILL "$runner_pid" 2>/dev/null || true
+    fi
+  ) &
+  watcher_pid=$!
+
+  local status=0
+  set +e
+  wait "$runner_pid"
+  status=$?
+  set -e
+  kill "$watcher_pid" 2>/dev/null || true
+  wait "$watcher_pid" 2>/dev/null || true
+  return "$status"
 }
 
 if ! generate_once "$PROMPT_PRIMARY" "$TEXT_FILE" "$RAW_FILE" "$MODEL_META_FILE"; then
@@ -201,6 +238,11 @@ if ! generate_once "$PROMPT_PRIMARY" "$TEXT_FILE" "$RAW_FILE" "$MODEL_META_FILE"
     echo "daily-horror produced empty output" >&2
     exit 1
   fi
+fi
+
+if [[ ! -s "$TEXT_FILE" ]]; then
+  echo "daily-horror missing draft output: $TEXT_FILE" >&2
+  exit 1
 fi
 
 cat > "$PROMPT_POLISH" <<EOF
@@ -212,6 +254,7 @@ cat > "$PROMPT_POLISH" <<EOF
 3. 保留故事离奇性，但把现实支点补稳。
 4. 不要让故事滑回这些近期旧骨架：$pretty_banned_mechanisms
 5. 让这次的故事引擎更清楚：${story_engine}（${story_engine_prompt}）
+5.5. 让这次分支骨架更清楚：${narrative_skeleton}
 6. 主场景必须明显落在“${scene_frame}”里，不要漂移成泛泛的小镇夜班
 7. “${taboo_rule}” 必须在具体行动中发作，而不是解释性旁白
 8. “${job_anchor}” 和 “${imagery_anchor}” 必须变得更鲜明，而不是只出现一次
@@ -239,6 +282,7 @@ cat > "$PROMPT_DERUTIFY" <<EOF
 必须做的事：
 1. 如果故事还在靠这些旧套路支撑：${pretty_banned_mechanisms}，就把它们削弱到次要位置或换成别的机制。
 2. 强化这次真正该有的陌生骨架：${story_engine}（${story_engine_prompt}）
+2.5. 强化这次分支骨架：${narrative_skeleton}
 3. 让这些元素更早、更深地进入主骨架：$pretty_axis_details
 4. 让非人压力源 $nonhuman_pressure 真正推动情节，而不是只出现一次
 5. 把过于说明式的世界观解释改成传闻、动作、行话、物件细节
@@ -283,6 +327,7 @@ cat > "$PROMPT_COMPRESS" <<EOF
 - 一段里如果连续两句都在解释“为什么会这样”，至少删掉一句，改成可见细节。
 - 如果某句是在给读者讲规则，而不是让人物遭遇规则，就把它改成角色记忆、老人闲话、墙上残句、工作守则、物件痕迹。
 - 如果一段里抽象名词过多，就补具体物件和动作，顺手删掉一半抽象词。
+- 如果句子太圆、太顺、太像标准模型产出，就打断它：拆句、换节奏、换成本地行话或器物细节。
 
 只输出压缩后的完整正文。
 
@@ -293,6 +338,41 @@ EOF
 generate_once "$PROMPT_COMPRESS" "$RUN_DIR/compress.txt" "$RUN_DIR/compress.raw.json" "$RUN_DIR/compress.meta.json" || true
 if [[ -s "$RUN_DIR/compress.txt" ]]; then
   cp "$RUN_DIR/compress.txt" "$TEXT_FILE"
+fi
+
+cat > "$PROMPT_UNFLATTEN" <<EOF
+你现在做最后一轮“反平滑”编辑。
+
+目标：
+1. 找出这篇里最像通用模型平均输出的句子，把它们改得更有棱角。
+2. 不追求华丽，追求偏、硬、脏、怪，有地方手感。
+3. 句子允许更短、更突然，允许偶尔像镇上传闻或行业黑话插进来。
+4. 不要改故事骨架，不要加新设定，不要换掉已定的职业/场景/禁忌。
+
+必须保留：
+- 分支骨架：${narrative_skeleton}
+- 故事引擎：${story_engine}（${story_engine_prompt}）
+- 主场景：${scene_frame}
+- 地方禁忌：${taboo_rule}
+- 主职业：${job_anchor}
+- 主意象：${imagery_anchor}
+- 句法压力：${sentence_pressure}
+
+判断标准：
+- 如果一句话太像“完整解释一个情况”，把它削短。
+- 如果一段里每句都差不多长，就打断节奏。
+- 如果一段像在总结，不像在目击，就改成目击。
+- 如果某句话可以从任何惊悚模板里摘出来，就把它换掉。
+
+只输出最终全文。
+
+原稿如下：
+$(cat "$TEXT_FILE")
+EOF
+
+generate_once "$PROMPT_UNFLATTEN" "$RUN_DIR/unflatten.txt" "$RUN_DIR/unflatten.raw.json" "$RUN_DIR/unflatten.meta.json" || true
+if [[ -s "$RUN_DIR/unflatten.txt" ]]; then
+  cp "$RUN_DIR/unflatten.txt" "$TEXT_FILE"
 fi
 
 python3 "$ROOT/ops/story/check_opening.py" "$TEXT_FILE" > "$HOOK_REPORT" || true
@@ -345,6 +425,9 @@ seed["taboo_rule"] = "$taboo_rule"
 seed["job_anchor"] = "$job_anchor"
 seed["imagery_anchor"] = "$imagery_anchor"
 seed["style_hard_mode"] = "$style_hard_mode"
+seed["narrative_skeleton_key"] = "$narrative_skeleton_key"
+seed["narrative_skeleton"] = "$narrative_skeleton"
+seed["sentence_pressure"] = "$sentence_pressure"
 seed["random_nonce"] = "$random_nonce"
 seed["generation_seed"] = "$SEED_NUM"
 seed["temperature"] = "$TEMPERATURE"

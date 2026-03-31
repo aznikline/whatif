@@ -46,6 +46,97 @@ STYLE_HARD_MODES = {
     "urban-cold-dread": "必须从人流秩序、空间摩擦、夜班服务、公共设施里长出寒意；不要只靠压抑心情撑全文。",
 }
 
+NARRATIVE_SKELETONS = {
+    "social-dread": [
+        {
+            "key": "shift-handover-debt",
+            "label": "交班债",
+            "prompt": "从一次交班、补录、替班、错签、回访或照护疏漏切入，让旧债在日常协作里被一点点催收。",
+        },
+        {
+            "key": "service-window-bleed",
+            "label": "窗口渗漏",
+            "prompt": "从一个窗口、柜台、热线、食堂、后厨或理货岗位切入，让制度边角渗出不合常理的脏东西。",
+        },
+    ],
+    "liaozhai-zhiguai": [
+        {
+            "key": "borrowed-light-route",
+            "label": "借灯走路",
+            "prompt": "从借灯、借宿、借路引、借纸钱、借香火这类临时求助切入，让债和规矩一起落到主角身上。",
+        },
+        {
+            "key": "temple-account-misentry",
+            "label": "庙账错签",
+            "prompt": "从祠堂账册、偏庙供单、抄经残页、路祭名册或口信误记切入，让礼数和次序一点点歪掉。",
+        },
+        {
+            "key": "water-crossing-tax",
+            "label": "过水税",
+            "prompt": "从渡口、水路、回声、报数、闭眼、叫名这些过河规矩切入，让看不见的旧税在路上收人。",
+        },
+    ],
+    "county-uncanny": [
+        {
+            "key": "roadside-seasonal-ledger",
+            "label": "路边时令账",
+            "prompt": "从国道边、棚区、养殖塘、流动摊位、夜间送货切入，让地方营生被一套季节性旧账催着走。",
+        },
+        {
+            "key": "market-carryover",
+            "label": "赶集带回",
+            "prompt": "从赶集、收摊、借货、赊苗、倒笼、守塘切入，让主角把不该带回来的东西带回场地。",
+        },
+    ],
+    "product-intrusion": [
+        {
+            "key": "repair-bay-assimilation",
+            "label": "返修同化",
+            "prompt": "从返修、试用、售后、样品间、翻新、回访切入，让商品先学会人的一部分，再要求更多。",
+        },
+        {
+            "key": "demo-ritual",
+            "label": "演示仪式",
+            "prompt": "从直播演示、陈列调试、试播、口播模板或体验流程切入，让产品演示变成一套旧仪式。",
+        },
+    ],
+    "urban-cold-dread": [
+        {
+            "key": "transit-echo",
+            "label": "换乘回声",
+            "prompt": "从地铁、商场、医院、办公楼、消防通道、外卖柜等公共空间切入，让空间开始纠正人。",
+        },
+        {
+            "key": "late-building-rule",
+            "label": "夜楼土规",
+            "prompt": "从老楼夜班、巡场、值守、带看、保洁、运送切入，让现代建筑里露出一套旧规矩。",
+        },
+    ],
+}
+
+SENTENCE_PRESSURES = {
+    "social-dread": [
+        "句子要像口头汇报被压到嗓子眼，短句多一点，少抒情解释。",
+        "允许出现一两句很干的行话，让职业现场自己发冷。",
+    ],
+    "liaozhai-zhiguai": [
+        "句子要有旧账和礼数的气味，允许冷不丁来一句像镇上传言的断句，不要过度抒情。",
+        "多用器物、门槛、火光、水声、香灰来推进，不要把世界观讲平。",
+    ],
+    "county-uncanny": [
+        "句子要带土路、棚膜、机油、水汽、塑料布的硬感，避免整齐漂亮的文艺句。",
+        "多写营生里的手势、搬抬、盘点、喂料、守夜动作，少解释心理学。",
+    ],
+    "product-intrusion": [
+        "句子要像拆机、翻新、试播、返修时手上沾着东西写出来的，别太干净。",
+        "写出塑料、金属、灯光、粘胶、声音延迟的触感，压低讲解味。",
+    ],
+    "urban-cold-dread": [
+        "句子可以更冷更短，像监控盲区里听来的叙述，不要太会讲道理。",
+        "让空间和广播说话，不要让作者跳出来说明恐怖在哪里。",
+    ],
+}
+
 IMAGINATION_AXES = {
     "animals": [
         "候鸟认路却飞回废弃码头",
@@ -374,6 +465,17 @@ def read_recent_imagery_anchors(limit: int = 6) -> list[str]:
     return motifs
 
 
+def read_recent_skeletons(limit: int = 6) -> list[str]:
+    skeletons: list[str] = []
+    for payload in read_recent_meta(limit * 2):
+        item = payload.get("narrative_skeleton_key")
+        if isinstance(item, str) and item and item not in skeletons:
+            skeletons.append(item)
+        if len(skeletons) >= limit:
+            break
+    return skeletons
+
+
 def detect_banned_mechanisms(limit: int = 3) -> list[str]:
     scores = {key: 0 for key in MECHANISM_LIBRARY}
     recent_files = sorted(STORY_ROOT.glob("20*/*.md"), reverse=True)[:5]
@@ -577,6 +679,23 @@ def choose_taboo_rule(style_key: str) -> str:
     return random.choice(pool)
 
 
+def choose_narrative_skeleton(style_key: str) -> tuple[str, str]:
+    recent = read_recent_skeletons()
+    pool = NARRATIVE_SKELETONS.get(style_key, [])
+    random.shuffle(pool)
+    for item in pool:
+        if item["key"] not in recent:
+            return item["key"], item["prompt"]
+    if pool:
+        return pool[0]["key"], pool[0]["prompt"]
+    return "plain-incident", "从一个具体动作切入，让异常沿着现实流程慢慢长出来。"
+
+
+def choose_sentence_pressure(style_key: str) -> str:
+    pool = SENTENCE_PRESSURES.get(style_key, ["句子别太顺，别太像在做总结。"])
+    return random.choice(pool)
+
+
 def choose_job_anchor(style_key: str) -> str:
     recent = read_recent_job_anchors()
     pool = JOB_ANCHORS.get(style_key, ["夜班工人"])[:]
@@ -622,6 +741,8 @@ def main() -> int:
     taboo_rule = choose_taboo_rule(style_key)
     job_anchor = choose_job_anchor(style_key)
     imagery_anchor = choose_imagery_anchor(style_key)
+    narrative_skeleton_key, narrative_skeleton = choose_narrative_skeleton(style_key)
+    sentence_pressure = choose_sentence_pressure(style_key)
     random_nonce = stable_random_nonce(event_title, product_title)
 
     payload["picked_style"] = {
@@ -644,6 +765,9 @@ def main() -> int:
     payload["job_anchor"] = job_anchor
     payload["imagery_anchor"] = imagery_anchor
     payload["style_hard_mode"] = STYLE_HARD_MODES.get(style_key, "")
+    payload["narrative_skeleton_key"] = narrative_skeleton_key
+    payload["narrative_skeleton"] = narrative_skeleton
+    payload["sentence_pressure"] = sentence_pressure
     payload["random_nonce"] = random_nonce
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
