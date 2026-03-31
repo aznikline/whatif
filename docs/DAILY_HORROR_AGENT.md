@@ -36,11 +36,14 @@
 - one current event seed and one product seed are fetched first
 - the system scores them into a preferred style family
 - each style family carries its own opening template so the first paragraphs do not collapse into one generic voice
+- the pipeline now also selects a random `story engine` and a random `generation seed` to break deterministic fallback into the same old skeleton
+- recent stories are scanned for overused mechanisms; the top repeated mechanisms become a blacklist for the next run
 - recent styles are read from prior `.meta.json` files to avoid repeating the same voice
-- each story stores `selected_style`, `style_reason`, and `opening_mode` in metadata
+- each story stores `selected_style`, `style_reason`, `opening_mode`, `story_engine`, `selected_axes`, `banned_mechanisms`, and the generation seed in metadata
 - the runtime script syncs `products/daily-horror/AGENT_SOUL.md` into the live workspace before generation
 - prompts now include a plausibility guard to suppress heavy-handed prices, numbers, and contrived symbolic setups
-- after the first draft, the pipeline runs a second editorial pass to sand down contrived gimmicks and strengthen lived-in detail
+- generation no longer depends on `openclaw agent`; the script calls the model directly and falls back locally if needed
+- after the first draft, the pipeline runs an editorial pass and then a dedicated de-rut pass to remove generic model habits
 - after polishing, an opening checker scores the first section; if the hook is too weak, the pipeline rewrites the opening once
 
 ## Sources

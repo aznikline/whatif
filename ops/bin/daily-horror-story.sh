@@ -2,8 +2,6 @@
 set -euo pipefail
 
 ROOT="/Users/wizout/op/openclaw"
-STATE_DIR="$ROOT/.openclaw-state"
-CONFIG_PATH="$STATE_DIR/openclaw.json"
 TODAY="${STORY_DATE_OVERRIDE:-$(date +%F)}"
 YEAR="${TODAY%%-*}"
 HARD_TIMEOUT="${DAILY_HORROR_HARD_TIMEOUT:-150}"
@@ -11,12 +9,17 @@ STORY_DIR="$ROOT/products/daily-horror/$YEAR"
 RUN_DIR="$ROOT/products/daily-horror/.runs/$TODAY"
 OUT_FILE="$STORY_DIR/$TODAY.md"
 META_FILE="$STORY_DIR/$TODAY.meta.json"
-RAW_FILE="$RUN_DIR/agent.raw"
-JSON_FILE="$RUN_DIR/agent.json"
-TEXT_FILE="$RUN_DIR/agent.txt"
-POLISHED_FILE="$RUN_DIR/agent.polished.txt"
-HOOK_REPORT="$RUN_DIR/opening.check.json"
 SEED_FILE="$RUN_DIR/seeds.json"
+RAW_FILE="$RUN_DIR/draft.raw.json"
+MODEL_META_FILE="$RUN_DIR/draft.meta.json"
+TEXT_FILE="$RUN_DIR/draft.txt"
+POLISHED_FILE="$RUN_DIR/polished.txt"
+HOOK_REPORT="$RUN_DIR/opening.check.json"
+PROMPT_PRIMARY="$RUN_DIR/prompt.primary.txt"
+PROMPT_FALLBACK="$RUN_DIR/prompt.fallback.txt"
+PROMPT_POLISH="$RUN_DIR/prompt.polish.txt"
+PROMPT_OPENING="$RUN_DIR/prompt.opening.txt"
+PROMPT_DERUTIFY="$RUN_DIR/prompt.derutify.txt"
 SOUL_SOURCE="$ROOT/products/daily-horror/AGENT_SOUL.md"
 SOUL_TARGET="$ROOT/.openclaw-state/workspaces/daily-horror/SOUL.md"
 
@@ -47,6 +50,11 @@ style_template="$(jq -r '.style_template // empty' "$SEED_FILE")"
 selected_axes="$(jq -r '.selected_axes[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
 axis_details="$(jq -r '.axis_details[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
 nonhuman_pressure="$(jq -r '.nonhuman_pressure // empty' "$SEED_FILE")"
+banned_mechanisms="$(jq -r '.banned_mechanisms[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
+story_engine_key="$(jq -r '.story_engine_key // empty' "$SEED_FILE")"
+story_engine="$(jq -r '.story_engine // empty' "$SEED_FILE")"
+story_engine_prompt="$(jq -r '.story_engine_prompt // empty' "$SEED_FILE")"
+random_nonce="$(jq -r '.random_nonce // empty' "$SEED_FILE")"
 recent_titles="$(
   find "$ROOT/products/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
     sort |
@@ -56,231 +64,197 @@ recent_titles="$(
     paste -sd ';' -
 )"
 
-prompt_primary=$(cat <<EOF
-你是一位擅长中文惊悚短篇的小说作家。请直接写一篇完整中文短篇惊悚小说。
+SEED_NUM="${DAILY_HORROR_SEED:-$random_nonce}"
+TEMPERATURE="$(python3 - <<PY
+import random
+random.seed(int("$SEED_NUM"))
+print(f"{random.uniform(0.93, 1.08):.2f}")
+PY
+)"
+TOP_P="$(python3 - <<PY
+import random
+random.seed(int("$SEED_NUM") + 17)
+print(f"{random.uniform(0.86, 0.95):.2f}")
+PY
+)"
 
-写作铁律：
-1. 氛围第一，但开头必须有钩子；恐怖来自积累，不等于前面没有抓力。
-2. 主角必须是普通人，有真实弱点和琐碎烦恼。
-3. 故事发生在一个有名字的小镇或封闭社区，让地点成为角色。
-4. 用大量感官细节、内心自辩、接地气对话和少量黑色幽默。
-5. 恐怖处在超自然与现实交界，不要解释干净。
-6. 结尾不要恢复平静，最后一句要留下寒意。
+cat > "$PROMPT_PRIMARY" <<EOF
+你现在不是在扮演某个现成 agent，也不是在走 OpenClaw 工作流。你就是这篇中文惊悚短篇的直接作者。
 
-自然性约束：
-- 恐怖细节必须先像生活，再像机关。
-- 价格、数字、日期、门牌、次数、库存等必须自然，不能为了诡异而刻意写成连号、对仗或一眼看出“作者设计感很重”的样子。
-- 如果某个数字、物件或句子后面会变得可怕，前面必须先自然出现，让它先像生活细节。
-- 主角应先尝试用普通解释自圆其说，不要一上来就像知道自己在恐怖小说里。
-- 不要写那种“读者一眼就觉得作者在用力摆机关”的句子。
+目标只有一个：写出一篇真正有风格、不是模板化、不是平均值的中文惊悚短篇。它应当像严肃文学和志怪小说在当代县镇、街区、职业现场里相撞出来的东西。
 
-志怪要求：
-- 如果采用聊斋式志怪或乡镇怪谈，离奇必须长在地方逻辑里：禁忌、旧物来源、渡口夜路、庙口闲话、旧册子残句、行业经验、家族规矩。
-- 志怪可以不说明白，但现实层面的因果和地方人情必须成立。
-- 让怪异通过人的回避、旧记录、口耳相传、职业经验慢慢显影，而不是直接宣布“有鬼”。
+硬要求：
+1. 直接输出完整故事正文。
+2. 第一行必须是纯标题，不要加 markdown 星号。
+3. 1500-2600 字。
+4. 禁止解释创作思路、禁止提纲、禁止代码块。
+5. 开头前 180-220 字内必须出现异常信号。
+6. 禁止写成“系统故障、失联名单、旧档回流、颜色标签、数据库多出一人”那种旧骨架，除非只占极小背景。
 
-风格选择：
-- 不要固定成单一“斯蒂芬·金式”。
-- 先根据今天的种子自动判断更适合的叙事谱系，再开始写：
-  1. 现代社会惊悚
-  2. 聊斋式志怪
-  3. 乡镇怪谈
-  4. 商品异化恐怖
-  5. 都市冷感惊悚
-- 可以混合两种谱系，但要保持统一，不要写成拼盘。
-- 今天优先风格：$picked_style_label
-- 选择原因：$picked_style_reason
-- 最近已用风格：$recent_styles
-- 本次优先采用的开头模板：$style_template
-- 本次强制使用的想象轴：$selected_axes
-- 本次可展开的陌生元素：$axis_details
-- 本次非人压力源：$nonhuman_pressure
+这次的写作参数：
+- 风格谱系：$picked_style_label
+- 风格原因：$picked_style_reason
+- 开头动作模型：$opening_mode
+- 风格模板：$style_template
+- 故事引擎：${story_engine}（${story_engine_prompt}）
+- 强制想象轴：$selected_axes
+- 必须显式写进正文、且成为主骨架支点的陌生元素：$axis_details
+- 非人压力源：$nonhuman_pressure
+- 禁止复用的近期机制：$banned_mechanisms
+- 随机扰动号：${SEED_NUM}（不要在正文显式写出这个数字）
 
-结构节奏：
-- 开篇约250-350字：立刻给出异常、危险传闻、违和物件或失手事件，让人想继续读
-- 发展约800字：异常升级，找到旧事线索
-- 高潮约400字：面对恐怖核心
-- 余波约200字：幸存但代价留下
+写法要求：
+- 不要再写成旧题材的变体。让动物、植物、新职业、身体/物件变形、科幻装置或古怪宇宙规则真正进入主骨架。
+- 不要只写“异常发生了”，而要写一个人具体怎么工作、怎么吃饭、怎么走夜路、怎么闻到味、怎么手上沾东西、怎么被人敷衍过去。
+- 允许大胆，但不能乱。离奇必须附着在地方规矩、行业手艺、地形、水路、养殖、摊贩、照护、修补、迁徙、祭祀、交换、计数这些现实支点上。
+- 如果第一反应是把产品种子写成包裹、驿站、扫码枪、快递单、系统面板，就强制放弃第一反应，改写第二种更陌生但更具体的落点。
+- 要有文学性，但别飘。句子要有压迫感、气味、材质、温度、重量。
+- 可以吸收这些高层优点：普通人卷入巨大而陌生的规则；黑色幽默一点点；世界观不说破；最后一句有寒意。
+- 不要照搬任何在世作者的句法和口吻。
 
-输出要求：
-- 直接输出故事正文
-- 第一行必须是标题
-- 使用第三人称有限视角，可少量第一人称内心独白
-- 字数 1500-2500
-- 不要提纲，不要解释，不要代码块
+开头规则：
+- 从正在发生的动作切入，不要先空写天气。
+- 第一段最好让读者立刻看见一种不该发生的小事。
+- 第一段到第三段之间，必须让故事的陌生支点冒头一次。
 
-今天的热点线索：
-- 事件候选：$picked_event
-- 产品候选：$picked_product
-- 其他新闻标题：$news_titles
-- 其他产品标题：$product_titles
+今天的种子：
+- 事件：$picked_event
+- 产品：$picked_product
+- 其他新闻：$news_titles
+- 其他产品：$product_titles
 
-使用规则：
-- 只把热点当作灵感种子，不要写成新闻改写
-- 可以把热点事件转成小镇流言、直播事故、社区恐慌、旧商业街传闻
-- 可以把热门产品转成道具、玩具、直播设备、应用、智能硬件或廉价促销品
-- 不要直接复用近期标题：$recent_titles
-- 开头切入方式优先用这个动作模型：$opening_mode
-- 如果种子更像志怪材料，就允许写出聊斋气、因果感、夜路感、纸扎感、祠堂或渡口气息
-- 如果种子更像产品或互联网材料，就优先写商品如何侵入生活、关系和身体
-- 不要每篇都从“主角回到出租屋”开始，要主动变化开头动作和场景
-- 开头最好从一个正在发生的动作开始，而不是先写大段天气和街景
-- 输出前默默自检一次：删掉显得刻意、工整、用力过猛的恐怖设计，换成更生活化但更不安的细节
-- 不要继续围绕“系统故障、联系不到的人、出生死亡错位、色标/标签、旧档回流”这套骨架打转，除非它们退到次要位置
-- 必须让至少一个动物、植物、新职业、科幻装置、身体/物件变形或宇宙规则进入故事主骨架
-- 必须让一个非人压力源真正推动情节，而不是只当装饰
+热点使用规则：
+- 热点只是灵感火种，不是新闻改写。
+- 如果事件太大，就把它缩成镇上传闻、行业消息、沿街议论、直播间口播、夜班人听来的话。
+- 如果产品太技术，就把它落回一个可摸到的载体：设备、样品、替身账号、家庭用品、维修件、训练器、摊位货、药、玩具。
 
-默认优先把“热点事件 + 热门产品”揉成一个恐怖种子。
+最后自检：
+- 删掉显眼的数字机关和太整齐的回环。
+- 删掉像“模型在补设定”的说明段。
+- 如果一段只是解释背景，不如改成动作、物件、对话、声音或传闻。
 EOF
-)
 
-prompt_fallback=$(cat <<EOF
-写一篇 1500-2200 字的中文惊悚短篇小说，直接输出故事正文。
+cat > "$PROMPT_FALLBACK" <<EOF
+写一篇 1500-2400 字的中文惊悚短篇小说，直接输出故事正文。
 
-强制种子：
-- 热点事件：$picked_event
-- 热门产品：$picked_product
+约束：
+- 标题单独占第一行，不要加 markdown 星号
+- 200 字内必须出现异常钩子
+- 不要再围绕这些旧骨架打转：$banned_mechanisms
+- 本次必须真的使用这些陌生轴：$selected_axes
+- 正文里必须显式出现并推动情节的陌生支点：$axis_details
+- 本次故事引擎是：${story_engine}（${story_engine_prompt}）
+- 本次非人压力源：$nonhuman_pressure
+- 本次参考的现实火种：$picked_event / $picked_product
+- 开头动作模型：$opening_mode
+- 近期标题禁复用：$recent_titles
 
 要求：
-- 第一行必须是中文标题
-- 开头 200 字内必须出现异常钩子
-- 场景可在小镇、旧社区、县城、都市边缘、夜班场所之间变化
 - 普通人主角
-- 缓慢积累的恐怖
-- 风格可参考现代社会惊悚、聊斋式志怪、乡镇怪谈、商品异化恐怖，但不要写成模仿秀
-- 数字、价格、门牌、日期、库存等必须自然，不要刻意设计成显眼机关
-- 志怪要建立在地方禁忌、旧物来源、夜路水路、口耳相传上，不要只靠空泛氛围词
-- 强制加入至少两个陌生想象轴：$selected_axes
-- 强制让这些元素进入主骨架：$axis_details
-- 非人压力源必须存在并推动情节：$nonhuman_pressure
-- 不要解释，不要提纲
-- 结尾最后一句必须发冷
-- 不要复用近期标题：$recent_titles
+- 地方感强
+- 大胆但有理路
+- 结尾最后一句发冷
+- 不要解释创作思路
 EOF
-)
 
-prompt_polish() {
-  cat <<EOF
-你是一位非常严格的中文惊悚小说编辑。请对下面这篇短篇做一次“保留故事骨架、只修表达和局部细节”的润稿。
+generate_once() {
+  local prompt_file="$1"
+  local out_text="$2"
+  local out_raw="$3"
+  local out_meta="$4"
 
-你的目标只有四个：
-1. 删掉所有显得刻意、工整、太像作者在摆机关的句子或细节。
-2. 让开头更抓人，但不要换题材，不要重写成另一篇。
-3. 让志怪和怪谈部分更像从地方禁忌、旧档案、口耳相传、现实办事逻辑里长出来。
-4. 保持现代中文可读性，保留原有标题、人物、地点、主事件和结尾方向。
-
-硬规则：
-- 不要改变标题
-- 不要改变主角姓名、地点名、核心设定、结尾方向
-- 不要新增大段设定，不要发明另一套世界观
-- 可以删改句子、替换细节、重写开头几段、压缩用力过猛的段落
-- 如果遇到明显刻意的数字、价格、日期、门牌、库存、对仗数字设计，把它改得更自然
-- 如果某段太像说明书或背景介绍，把它改成动作、对话、物件、气味、光线或人的反应
-- 如果某个离奇点没有现实支点，就补一个小支点：旧记录、街坊回避、职业经验、庙口闲话、档案残页、地契、旧规矩
-- 只输出润稿后的完整故事正文
-
-下面是待润稿的故事：
-$(cat "$TEXT_FILE")
-EOF
+  python3 "$ROOT/ops/story/generate_story_direct.py" \
+    --prompt-file "$prompt_file" \
+    --output-file "$out_text" \
+    --raw-file "$out_raw" \
+    --meta-file "$out_meta" \
+    --timeout "$HARD_TIMEOUT" \
+    --seed "$SEED_NUM" \
+    --temperature "$TEMPERATURE" \
+    --top-p "$TOP_P"
 }
 
-prompt_rewrite_opening() {
-  cat <<EOF
-你是一位中文惊悚小说编辑。下面这篇故事的开头不够抓人，或者异常信号不够早。请只做这件事：
-
-- 保留标题、人物、地点、主事件、世界设定和结尾方向
-- 重点重写前 3-5 段，让开头更快进入异常
-- 保证前 180-220 字内出现一个清晰的反常细节或危险信号
-- 开头必须从具体动作切入
-- 不要把细节写得过于工整、像机关
-- 风格仍以 $picked_style_label 为主，优先模板：$style_template
-- 让开头就能看见这次的陌生想象轴，而不是写成普通系统故障故事
-- 保持全文现代中文可读
-- 直接输出润稿后的完整故事正文
-
-原稿如下：
-$(cat "$TEXT_FILE")
-EOF
-}
-
-run_agent_once() {
-  local prompt="$1"
-  local raw_file="$2"
-  local pid=""
-  local watcher=""
-  local status=0
-
-  (
-    OPENCLAW_STATE_DIR="$STATE_DIR" OPENCLAW_CONFIG_PATH="$CONFIG_PATH" \
-      openclaw agent --local --agent daily-horror --message "$prompt" --json --timeout 120
-  ) > "$raw_file" 2>&1 &
-  pid=$!
-
-  (
-    sleep "$HARD_TIMEOUT"
-    kill -TERM "$pid" 2>/dev/null || true
-  ) &
-  watcher=$!
-
-  wait "$pid" || status=$?
-  kill -TERM "$watcher" 2>/dev/null || true
-  wait "$watcher" 2>/dev/null || true
-  return "$status"
-}
-
-extract_text() {
-  sed -n '/^{/,$p' "$RAW_FILE" > "$JSON_FILE"
-  jq -r '.payloads[0].text // empty' "$JSON_FILE" > "$TEXT_FILE"
-  [[ -s "$TEXT_FILE" ]]
-}
-
-run_polish_pass() {
-  local raw_file="$RUN_DIR/agent.polish.raw"
-  local json_file="$RUN_DIR/agent.polish.json"
-  local text_file="$RUN_DIR/agent.polish.txt"
-  local prompt=""
-
-  prompt="$(prompt_polish)"
-  if ! run_agent_once "$prompt" "$raw_file"; then
-    return 1
-  fi
-  sed -n '/^{/,$p' "$raw_file" > "$json_file"
-  jq -r '.payloads[0].text // empty' "$json_file" > "$text_file"
-  [[ -s "$text_file" ]] || return 1
-  cp "$text_file" "$POLISHED_FILE"
-  cp "$text_file" "$TEXT_FILE"
-}
-
-run_opening_rewrite_pass() {
-  local raw_file="$RUN_DIR/agent.opening.raw"
-  local json_file="$RUN_DIR/agent.opening.json"
-  local text_file="$RUN_DIR/agent.opening.txt"
-  local prompt=""
-
-  prompt="$(prompt_rewrite_opening)"
-  if ! run_agent_once "$prompt" "$raw_file"; then
-    return 1
-  fi
-  sed -n '/^{/,$p' "$raw_file" > "$json_file"
-  jq -r '.payloads[0].text // empty' "$json_file" > "$text_file"
-  [[ -s "$text_file" ]] || return 1
-  cp "$text_file" "$TEXT_FILE"
-}
-
-if ! run_agent_once "$prompt_primary" "$RAW_FILE" || ! extract_text; then
-  mv "$RAW_FILE" "$RUN_DIR/agent.primary.raw" 2>/dev/null || true
-  mv "$JSON_FILE" "$RUN_DIR/agent.primary.json" 2>/dev/null || true
-  mv "$TEXT_FILE" "$RUN_DIR/agent.primary.txt" 2>/dev/null || true
-  if ! run_agent_once "$prompt_fallback" "$RAW_FILE" || ! extract_text; then
+if ! generate_once "$PROMPT_PRIMARY" "$TEXT_FILE" "$RAW_FILE" "$MODEL_META_FILE"; then
+  if ! generate_once "$PROMPT_FALLBACK" "$TEXT_FILE" "$RAW_FILE" "$MODEL_META_FILE"; then
     echo "daily-horror produced empty output" >&2
     exit 1
   fi
 fi
 
-run_polish_pass || true
+cat > "$PROMPT_POLISH" <<EOF
+你是一位非常严格的中文惊悚小说编辑。只做语言和局部结构修订，不换题，不换人物，不换核心设定。
+
+目标：
+1. 删掉刻意、工整、太像作者在摆机关的句子。
+2. 把过于像模板的段落打散，换成更具体的动作、材质、气味、职业细节。
+3. 保留故事离奇性，但把现实支点补稳。
+4. 不要让故事滑回这些近期旧骨架：$banned_mechanisms
+5. 让这次的故事引擎更清楚：${story_engine}（${story_engine_prompt}）
+6. 如果故事偷懒回到“包裹、扫码、驿站、后台、名册”这类显眼近路，就把它改去更陌生的职业现场或地方规矩里
+
+硬规则：
+- 标题不改
+- 人名、地点、主事件、结尾方向不改
+- 不要加解释段
+- 不要把故事改回“系统异常/档案回流”套路
+- 只输出润稿后的完整正文
+
+原稿如下：
+$(cat "$TEXT_FILE")
+EOF
+
+generate_once "$PROMPT_POLISH" "$POLISHED_FILE" "$RUN_DIR/polish.raw.json" "$RUN_DIR/polish.meta.json" || true
+if [[ -s "$POLISHED_FILE" ]]; then
+  cp "$POLISHED_FILE" "$TEXT_FILE"
+fi
+
+cat > "$PROMPT_DERUTIFY" <<EOF
+你现在做一次“反套路审查重写”。目标不是润色，而是找出这篇故事里仍然像通用对话模型平均输出的地方，并把它们改掉。
+
+必须做的事：
+1. 如果故事还在靠这些旧套路支撑：${banned_mechanisms}，就把它们削弱到次要位置或换成别的机制。
+2. 强化这次真正该有的陌生骨架：${story_engine}（${story_engine_prompt}）
+3. 让这些元素更早、更深地进入主骨架：$axis_details
+4. 让非人压力源 $nonhuman_pressure 真正推动情节，而不是只出现一次
+5. 把过于说明式的世界观解释改成传闻、动作、行话、物件细节
+
+不要：
+- 不要改标题
+- 不要改人物姓名和地点
+- 不要重写成另一篇
+- 不要变成晦涩实验文本
+
+只输出修改后的完整正文。
+
+原稿如下：
+$(cat "$TEXT_FILE")
+EOF
+
+generate_once "$PROMPT_DERUTIFY" "$RUN_DIR/derutify.txt" "$RUN_DIR/derutify.raw.json" "$RUN_DIR/derutify.meta.json" || true
+if [[ -s "$RUN_DIR/derutify.txt" ]]; then
+  cp "$RUN_DIR/derutify.txt" "$TEXT_FILE"
+fi
+
 python3 "$ROOT/ops/story/check_opening.py" "$TEXT_FILE" > "$HOOK_REPORT" || true
 if [[ "$(jq -r '.should_rewrite // false' "$HOOK_REPORT" 2>/dev/null)" == "true" ]]; then
-  run_opening_rewrite_pass || true
+  cat > "$PROMPT_OPENING" <<EOF
+你是一位中文惊悚小说编辑。下面这篇故事的开头不够抓人。保留标题、人物、地点、主事件和结尾方向，只重写前 3-5 段。
+
+要求：
+- 前 180-220 字内出现清晰异常
+- 从具体动作切入
+- 让故事引擎更早冒头：${story_engine}（${story_engine_prompt}）
+- 让陌生轴更早冒头：$axis_details
+- 不要写成旧套路：$banned_mechanisms
+- 直接输出修改后的完整正文
+
+原稿如下：
+$(cat "$TEXT_FILE")
+EOF
+  generate_once "$PROMPT_OPENING" "$RUN_DIR/opening.txt" "$RUN_DIR/opening.raw.json" "$RUN_DIR/opening.meta.json" || true
+  if [[ -s "$RUN_DIR/opening.txt" ]]; then
+    cp "$RUN_DIR/opening.txt" "$TEXT_FILE"
+  fi
   python3 "$ROOT/ops/story/check_opening.py" "$TEXT_FILE" > "$HOOK_REPORT" || true
 fi
 
@@ -295,22 +269,43 @@ seed["selected_style_key"] = "$picked_style_key"
 seed["style_reason"] = "$picked_style_reason"
 seed["opening_mode"] = "$opening_mode"
 seed["story_date"] = "$TODAY"
-seed["generator"] = "daily-horror"
-seed["polish_pass"] = True
+seed["generator"] = "daily-horror-direct"
 seed["selected_axes"] = [x for x in """$selected_axes""".split("; ") if x]
 seed["axis_details"] = [x for x in """$axis_details""".split("; ") if x]
 seed["nonhuman_pressure"] = "$nonhuman_pressure"
+seed["banned_mechanisms"] = [x for x in """$banned_mechanisms""".split("; ") if x]
+seed["story_engine_key"] = "$story_engine_key"
+seed["story_engine"] = "$story_engine"
+seed["story_engine_prompt"] = "$story_engine_prompt"
+seed["random_nonce"] = "$random_nonce"
+seed["generation_seed"] = "$SEED_NUM"
+seed["temperature"] = "$TEMPERATURE"
+seed["top_p"] = "$TOP_P"
 try:
     seed["opening_check"] = json.loads(Path("$HOOK_REPORT").read_text(encoding="utf-8"))
 except Exception:
     seed["opening_check"] = {}
+try:
+    seed["model_run"] = json.loads(Path("$MODEL_META_FILE").read_text(encoding="utf-8"))
+except Exception:
+    seed["model_run"] = {}
 Path("$META_FILE").write_text(json.dumps(seed, ensure_ascii=False, indent=2), encoding="utf-8")
 PY
+
 python3 "$ROOT/ops/story/update_story_index.py"
 
-git -C "$ROOT" add "$OUT_FILE" "$META_FILE" "$ROOT/products/daily-horror/README.md"
+git -C "$ROOT" add -f \
+  "$OUT_FILE" \
+  "$META_FILE" \
+  "$ROOT/products/daily-horror/README.md" \
+  "$ROOT/ops/bin/daily-horror-story.sh" \
+  "$ROOT/ops/story/fetch_hot_seeds.py" \
+  "$ROOT/ops/story/generate_story_direct.py" \
+  "$ROOT/products/daily-horror/AGENT_SOUL.md" \
+  "$ROOT/docs/DAILY_HORROR_AGENT.md"
+
 if ! git -C "$ROOT" diff --cached --quiet; then
-  git -C "$ROOT" commit -m "story: daily horror for $TODAY"
+  git -C "$ROOT" commit -m "refactor: run daily horror generation directly"
   git -C "$ROOT" push origin master
 fi
 

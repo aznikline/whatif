@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
 import json
 import random
 import re
@@ -19,6 +20,113 @@ USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36"
 )
+
+STYLE_LABELS = {
+    "social-dread": "现代社会惊悚",
+    "liaozhai-zhiguai": "聊斋式志怪",
+    "county-uncanny": "乡镇怪谈",
+    "product-intrusion": "商品异化恐怖",
+    "urban-cold-dread": "都市冷感惊悚",
+}
+
+STYLE_TEMPLATES = {
+    "social-dread": "从一个具体办事动作、营业动作、照护动作或公开协作动作切入，让压力从制度和人情缝里漏出来，而不是直接靠系统弹窗。",
+    "liaozhai-zhiguai": "从夜路、借宿、旧宅、渡口、祠堂、纸物、香火、残页或异梦切入，让怪异先像地方人不愿讲透的旧例。",
+    "county-uncanny": "从县城老街、国道边、小旅馆、河道、修车铺、养殖场、殡葬铺、夜班岗位或广播喇叭切入，让异常像地方传闻自己找上门。",
+    "product-intrusion": "从拆封、试用、摆样、维修、调试、返修、售后或直播演示切入，让商品先完成一次不该有的举动。",
+    "urban-cold-dread": "从合租房、办公楼、商场后场、医院走廊、末班车、跑腿、代驾或外卖柜切入，让秩序中的细小偏差先出现。",
+}
+
+IMAGINATION_AXES = {
+    "animals": [
+        "候鸟认路却飞回废弃码头",
+        "黑猫总守着不该有门牌的门口",
+        "河里的东西只在有人报名字时浮头",
+        "站点里的流浪狗只对某一类包裹低吼",
+        "养殖场的鹅会追着会说谎的人跑",
+    ],
+    "plants": [
+        "潮湿墙缝里的霉会沿着名字生长",
+        "河滩杂草只在夜里朝旧宅方向倒伏",
+        "香灰里长出的芽会缠上旧物",
+        "温室作物在播报声里改换气味",
+        "药圃里的植物会记住摸过它的人",
+    ],
+    "new-jobs": [
+        "夜班代收员",
+        "无人机测绘员",
+        "殡仪化妆师",
+        "直播场控",
+        "养老院夜护工",
+        "温室巡检员",
+        "垃圾分拣员",
+        "宠物殡葬师",
+        "民宿代管员",
+    ],
+    "sci-fi-devices": [
+        "语音替身设备",
+        "气味采样仪",
+        "识别眼镜",
+        "无人机喇叭",
+        "睡眠监测枕",
+        "情绪回放镜",
+    ],
+    "cosmic-rules": [
+        "每次被正确命名的东西都会向人间靠近一步",
+        "某些包裹一旦签收就不再属于活人",
+        "旧河道记住的名字比人口登记更多",
+        "镇上有一套只在夜里生效的计数法",
+        "某些东西只要被看见第三次就必须带回家",
+    ],
+    "body-object": [
+        "纸张会吸走人的体温",
+        "塑料外壳开始长出像指甲一样的薄层",
+        "人的气味会被旧布料记住",
+        "毛发会朝着某个门牌方向弯曲",
+        "木头会把摸过它的手纹慢慢顶出来",
+    ],
+}
+
+STORY_ENGINES = {
+    "animal-contract": {
+        "label": "兽约",
+        "prompt": "让某种动物成为地方规矩的执行者。人不是被鬼追，而是被一种懂规矩的生灵追认。",
+        "fits": ["county-uncanny", "liaozhai-zhiguai"],
+    },
+    "botanical-takeover": {
+        "label": "草木接管",
+        "prompt": "让植物、霉、菌或药草沿着职业流程、家务流程或祭祀流程慢慢接管现实。",
+        "fits": ["liaozhai-zhiguai", "social-dread", "county-uncanny"],
+    },
+    "craft-curse": {
+        "label": "手艺报应",
+        "prompt": "让一种具体手艺、修补术、烹调法、妆造法或地方工种，成为怪异发生的通道。",
+        "fits": ["county-uncanny", "product-intrusion", "social-dread"],
+    },
+    "cosmic-counting": {
+        "label": "计数法",
+        "prompt": "让地方上存在一条离奇但自洽的计数、命名、轮换或映照规则，日常生活的人被迫进入它。",
+        "fits": ["liaozhai-zhiguai", "urban-cold-dread", "social-dread"],
+    },
+    "itinerant-wonder": {
+        "label": "游走奇物",
+        "prompt": "让一个流动的摊位、戏班、展销员、维修员、灵车、广告车或巡回服务，把怪异带进镇子。",
+        "fits": ["county-uncanny", "product-intrusion", "urban-cold-dread"],
+    },
+    "body-transference": {
+        "label": "身体转写",
+        "prompt": "让身体上的细节被布料、木头、塑料、纸、骨头、气味或植物悄悄转写、保存、复制或孵化。",
+        "fits": ["product-intrusion", "liaozhai-zhiguai", "urban-cold-dread"],
+    },
+}
+
+MECHANISM_LIBRARY = {
+    "system-glitch": ["系统", "后台", "数据", "刷新", "标签", "色标", "弹窗", "平台", "界面"],
+    "archive-return": ["档案", "旧档", "户籍", "登记", "注销", "台账", "底册", "旧册", "归档"],
+    "missing-contact": ["失联", "联系不到", "空号", "没人接", "不回", "打不通"],
+    "delivery-loop": ["快递", "包裹", "驿站", "签收", "面单"],
+    "mortuary-loop": ["殡仪", "骨灰", "遗体", "火化", "寄存楼"],
+}
 
 
 def fetch(url: str) -> str:
@@ -77,74 +185,21 @@ def fetch_products() -> list[dict[str, str]]:
     ]
 
 
-STYLE_LABELS = {
-    "social-dread": "现代社会惊悚",
-    "liaozhai-zhiguai": "聊斋式志怪",
-    "county-uncanny": "乡镇怪谈",
-    "product-intrusion": "商品异化恐怖",
-    "urban-cold-dread": "都市冷感惊悚",
-}
-
-STYLE_TEMPLATES = {
-    "social-dread": "从一个具体的办事动作或制度流程切入，例如录入、核查、签字、群通知、催缴或审核，然后让系统、表格、名单、标签开始悄悄失真。",
-    "liaozhai-zhiguai": "从夜路、旧宅、渡口、祠堂、纸物、梦醒、借宿、残页或香火规矩切入，让怪异先像地方人不愿讲透的旧例。",
-    "county-uncanny": "从县城老街、国道边、小旅馆、河道、集市、修车铺、殡葬店、广播喇叭或夜班岗位切入，让异常像地方传闻自己找上门。",
-    "product-intrusion": "从拆封、试用、绑定账号、售后回访、语音播报、直播样品、系统更新、快递签收或促销展示切入，让商品先完成一次不该有的举动。",
-    "urban-cold-dread": "从合租房、电梯、办公楼、末班地铁、医院走廊、跑腿、代驾、外卖柜或监控屏幕切入，让冰冷秩序里先出现一处细小偏差。",
-}
-
-IMAGINATION_AXES = {
-    "animals": [
-        "候鸟认路却飞回废弃码头",
-        "黑猫总守着不该有门牌的门口",
-        "河里的东西只在有人报名字时浮头",
-        "站点里的流浪狗只对某一类包裹低吼",
-    ],
-    "plants": [
-        "潮湿墙缝里的霉会沿着名字生长",
-        "河滩杂草只在夜里朝旧宅方向倒伏",
-        "香灰里长出的芽会缠上旧物",
-        "温室作物在播报声里改换气味",
-    ],
-    "new-jobs": [
-        "夜班代收员",
-        "无人机测绘员",
-        "殡仪化妆师",
-        "直播场控",
-        "养老院夜护工",
-        "温室巡检员",
-        "垃圾分拣员",
-    ],
-    "sci-fi-devices": [
-        "自动归属系统",
-        "智能播报盒",
-        "识别眼镜",
-        "无人机喇叭",
-        "语音替身设备",
-        "气味采样仪",
-    ],
-    "cosmic-rules": [
-        "每次被正确命名的东西都会向人间靠近一步",
-        "某些包裹一旦签收就不再属于活人",
-        "旧河道记住的名字比户籍系统更多",
-        "地方上有一套只在夜里生效的归档规则",
-    ],
-    "body-object": [
-        "纸张会吸走人的体温",
-        "塑料外壳开始长出像指甲一样的薄层",
-        "人的气味会被旧布料记住",
-        "毛发会朝着某个门牌方向弯曲",
-    ],
-}
+def read_recent_meta(limit: int = 6) -> list[dict]:
+    records: list[dict] = []
+    for meta in sorted(STORY_ROOT.glob("20*/*.meta.json"), reverse=True):
+        try:
+            records.append(json.loads(meta.read_text(encoding="utf-8")))
+        except Exception:
+            continue
+        if len(records) >= limit:
+            break
+    return records
 
 
 def read_recent_styles(limit: int = 5) -> list[str]:
     styles: list[str] = []
-    for meta in sorted(STORY_ROOT.glob("20*/*.meta.json"), reverse=True):
-        try:
-            payload = json.loads(meta.read_text(encoding="utf-8"))
-        except Exception:
-            continue
+    for payload in read_recent_meta(limit * 2):
         style = payload.get("selected_style")
         if isinstance(style, str) and style and style not in styles:
             styles.append(style)
@@ -155,17 +210,38 @@ def read_recent_styles(limit: int = 5) -> list[str]:
 
 def read_recent_axes(limit: int = 6) -> list[str]:
     axes: list[str] = []
-    for meta in sorted(STORY_ROOT.glob("20*/*.meta.json"), reverse=True):
-        try:
-            payload = json.loads(meta.read_text(encoding="utf-8"))
-        except Exception:
-            continue
+    for payload in read_recent_meta(limit * 2):
         for axis in payload.get("selected_axes", []):
             if isinstance(axis, str) and axis not in axes:
                 axes.append(axis)
         if len(axes) >= limit:
             break
     return axes[:limit]
+
+
+def read_recent_engines(limit: int = 5) -> list[str]:
+    engines: list[str] = []
+    for payload in read_recent_meta(limit * 2):
+        engine = payload.get("story_engine_key")
+        if isinstance(engine, str) and engine and engine not in engines:
+            engines.append(engine)
+        if len(engines) >= limit:
+            break
+    return engines
+
+
+def detect_banned_mechanisms(limit: int = 3) -> list[str]:
+    scores = {key: 0 for key in MECHANISM_LIBRARY}
+    recent_files = sorted(STORY_ROOT.glob("20*/*.md"), reverse=True)[:5]
+    for story in recent_files:
+        try:
+            text = story.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        for key, words in MECHANISM_LIBRARY.items():
+            scores[key] += sum(text.count(word) for word in words)
+    ranked = [key for key, score in sorted(scores.items(), key=lambda item: (-item[1], item[0])) if score > 0]
+    return ranked[:limit]
 
 
 def score_styles(event_title: str, product_title: str) -> dict[str, int]:
@@ -189,8 +265,8 @@ def score_styles(event_title: str, product_title: str) -> dict[str, int]:
         "tanker", "oil", "road", "school", "west bank",
     ]
     zhiguai_keywords = [
-        "island", "temple", "library", "ghost", "dream", "water",
-        "river", "mountain", "old", "archive", "gate", "hall",
+        "island", "temple", "library", "water", "river", "mountain",
+        "old", "gate", "hall", "harbor", "shore",
     ]
 
     for word in social_keywords:
@@ -239,9 +315,9 @@ def choose_style(event_title: str, product_title: str) -> tuple[str, str, list[s
     elif chosen == "county-uncanny":
         reasons.append("港口/县城/边缘地带意象更强")
     elif chosen == "liaozhai-zhiguai":
-        reasons.append("种子里有旧物、渡口、水域或异闻气质")
+        reasons.append("种子里有水域、旧物、旧地名或异闻气质")
     elif chosen == "urban-cold-dread":
-        reasons.append("题材更适合冷都市、平台、办公和夜生活语境")
+        reasons.append("题材更适合冷都市、平台、夜班与秩序偏差")
 
     if chosen in recent:
         reasons.append("最近风格重复不可避免，但仍按种子匹配度优先")
@@ -253,11 +329,11 @@ def choose_style(event_title: str, product_title: str) -> tuple[str, str, list[s
 
 def choose_opening_mode(style_key: str) -> str:
     modes = {
-        "social-dread": "从一次看似普通但已经让主角无法装作没看见的社会性小事切入",
-        "liaozhai-zhiguai": "从夜路、旧宅、渡口、香火、纸物或异梦中的一个反常细节切入",
-        "county-uncanny": "从县城、小港、国道、水库、集市、小旅馆里的异样传闻或夜间遭遇切入",
-        "product-intrusion": "从一件新买、试用、促销或热门商品第一次表现出不该有的行为切入",
-        "urban-cold-dread": "从合租房、办公楼、地铁口、医院、代驾或夜便利店里的一件失手或怪事切入",
+        "social-dread": "从一次营业、核账、照护、值班、核查或纠纷处理中的小失手切入",
+        "liaozhai-zhiguai": "从夜路、旧宅、渡口、祠堂、纸物、香火、借宿或异梦中的一个反常细节切入",
+        "county-uncanny": "从县城、小港、国道、水库、集市、小旅馆、养殖场或夜班岗位里的异样遭遇切入",
+        "product-intrusion": "从拆封、试用、返修、摆样、调试、收货或直播演示切入，让商品第一次表现出不该有的行为",
+        "urban-cold-dread": "从合租房、办公楼、商场后场、地铁口、医院、代驾或夜便利店里的一件失手切入",
     }
     return modes.get(style_key, "从一件普通生活细节中的反常变化切入")
 
@@ -265,11 +341,11 @@ def choose_opening_mode(style_key: str) -> str:
 def choose_imagination_axes(style_key: str) -> tuple[list[str], list[str], str]:
     recent_axes = read_recent_axes()
     preferred = {
-        "social-dread": ["new-jobs", "cosmic-rules", "animals"],
+        "social-dread": ["new-jobs", "cosmic-rules", "animals", "plants"],
         "liaozhai-zhiguai": ["animals", "plants", "cosmic-rules", "body-object"],
         "county-uncanny": ["animals", "new-jobs", "plants", "cosmic-rules"],
-        "product-intrusion": ["sci-fi-devices", "body-object", "animals"],
-        "urban-cold-dread": ["new-jobs", "sci-fi-devices", "body-object"],
+        "product-intrusion": ["sci-fi-devices", "body-object", "animals", "new-jobs"],
+        "urban-cold-dread": ["new-jobs", "sci-fi-devices", "body-object", "plants"],
     }.get(style_key, ["new-jobs", "animals"])
 
     selected: list[str] = []
@@ -280,23 +356,42 @@ def choose_imagination_axes(style_key: str) -> tuple[list[str], list[str], str]:
             break
 
     for axis in IMAGINATION_AXES:
-        if len(selected) >= 2:
+        if len(selected) >= 3:
             break
         if axis not in selected:
             selected.append(axis)
 
+    random.shuffle(selected)
+    selected = selected[: random.choice([2, 3])]
     details = [random.choice(IMAGINATION_AXES[axis]) for axis in selected]
-    nonhuman = random.choice([
-        "动物",
-        "植物",
-        "器物",
-        "水",
-        "风",
-        "菌",
-        "算法",
-        "地方禁忌",
-    ])
+    nonhuman = random.choice(["动物", "植物", "器物", "水", "风", "菌", "地方禁忌", "计数规则"])
     return selected, details, nonhuman
+
+
+def choose_story_engine(style_key: str, banned_mechanisms: list[str]) -> tuple[str, str]:
+    recent_engines = read_recent_engines()
+    candidates = []
+    for key, payload in STORY_ENGINES.items():
+        score = 0
+        if style_key in payload["fits"]:
+            score += 3
+        if key not in recent_engines:
+            score += 2
+        if "system-glitch" in banned_mechanisms and key in {"cosmic-counting"}:
+            score += 1
+        if "archive-return" in banned_mechanisms and key in {"animal-contract", "itinerant-wonder", "botanical-takeover"}:
+            score += 1
+        candidates.append((score, key))
+    candidates.sort(reverse=True)
+    top = [key for _, key in candidates[:3]] or list(STORY_ENGINES.keys())
+    chosen = random.choice(top)
+    return chosen, STORY_ENGINES[chosen]["prompt"]
+
+
+def stable_random_nonce(event_title: str, product_title: str) -> int:
+    material = f"{event_title}|{product_title}|{random.random()}".encode("utf-8")
+    digest = hashlib.sha256(material).hexdigest()
+    return int(digest[:8], 16)
 
 
 def main() -> int:
@@ -307,9 +402,15 @@ def main() -> int:
         payload["picked_event"] = random.choice(news[:5])
     if products:
         payload["picked_product"] = random.choice(products[:5])
+
     event_title = str(payload.get("picked_event", {}).get("title", ""))
     product_title = str(payload.get("picked_product", {}).get("title", ""))
     style_key, style_reason, recent_styles = choose_style(event_title, product_title)
+    banned_mechanisms = detect_banned_mechanisms()
+    axes, axis_details, nonhuman = choose_imagination_axes(style_key)
+    story_engine_key, story_engine_prompt = choose_story_engine(style_key, banned_mechanisms)
+    random_nonce = stable_random_nonce(event_title, product_title)
+
     payload["picked_style"] = {
         "key": style_key,
         "label": STYLE_LABELS[style_key],
@@ -318,10 +419,14 @@ def main() -> int:
     payload["recent_styles"] = recent_styles
     payload["opening_mode"] = choose_opening_mode(style_key)
     payload["style_template"] = STYLE_TEMPLATES.get(style_key, "")
-    axes, axis_details, nonhuman = choose_imagination_axes(style_key)
     payload["selected_axes"] = axes
     payload["axis_details"] = axis_details
     payload["nonhuman_pressure"] = nonhuman
+    payload["banned_mechanisms"] = banned_mechanisms
+    payload["story_engine_key"] = story_engine_key
+    payload["story_engine"] = STORY_ENGINES[story_engine_key]["label"]
+    payload["story_engine_prompt"] = story_engine_prompt
+    payload["random_nonce"] = random_nonce
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 
