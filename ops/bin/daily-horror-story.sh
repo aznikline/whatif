@@ -44,6 +44,9 @@ recent_styles="$(jq -r '.recent_styles[]? // empty' "$SEED_FILE" | paste -sd '; 
 news_titles="$(jq -r '.news[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 product_titles="$(jq -r '.products[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 style_template="$(jq -r '.style_template // empty' "$SEED_FILE")"
+selected_axes="$(jq -r '.selected_axes[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
+axis_details="$(jq -r '.axis_details[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
+nonhuman_pressure="$(jq -r '.nonhuman_pressure // empty' "$SEED_FILE")"
 recent_titles="$(
   find "$ROOT/products/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
     sort |
@@ -89,6 +92,9 @@ prompt_primary=$(cat <<EOF
 - 选择原因：$picked_style_reason
 - 最近已用风格：$recent_styles
 - 本次优先采用的开头模板：$style_template
+- 本次强制使用的想象轴：$selected_axes
+- 本次可展开的陌生元素：$axis_details
+- 本次非人压力源：$nonhuman_pressure
 
 结构节奏：
 - 开篇约250-350字：立刻给出异常、危险传闻、违和物件或失手事件，让人想继续读
@@ -120,6 +126,9 @@ prompt_primary=$(cat <<EOF
 - 不要每篇都从“主角回到出租屋”开始，要主动变化开头动作和场景
 - 开头最好从一个正在发生的动作开始，而不是先写大段天气和街景
 - 输出前默默自检一次：删掉显得刻意、工整、用力过猛的恐怖设计，换成更生活化但更不安的细节
+- 不要继续围绕“系统故障、联系不到的人、出生死亡错位、色标/标签、旧档回流”这套骨架打转，除非它们退到次要位置
+- 必须让至少一个动物、植物、新职业、科幻装置、身体/物件变形或宇宙规则进入故事主骨架
+- 必须让一个非人压力源真正推动情节，而不是只当装饰
 
 默认优先把“热点事件 + 热门产品”揉成一个恐怖种子。
 EOF
@@ -141,6 +150,9 @@ prompt_fallback=$(cat <<EOF
 - 风格可参考现代社会惊悚、聊斋式志怪、乡镇怪谈、商品异化恐怖，但不要写成模仿秀
 - 数字、价格、门牌、日期、库存等必须自然，不要刻意设计成显眼机关
 - 志怪要建立在地方禁忌、旧物来源、夜路水路、口耳相传上，不要只靠空泛氛围词
+- 强制加入至少两个陌生想象轴：$selected_axes
+- 强制让这些元素进入主骨架：$axis_details
+- 非人压力源必须存在并推动情节：$nonhuman_pressure
 - 不要解释，不要提纲
 - 结尾最后一句必须发冷
 - 不要复用近期标题：$recent_titles
@@ -182,6 +194,7 @@ prompt_rewrite_opening() {
 - 开头必须从具体动作切入
 - 不要把细节写得过于工整、像机关
 - 风格仍以 $picked_style_label 为主，优先模板：$style_template
+- 让开头就能看见这次的陌生想象轴，而不是写成普通系统故障故事
 - 保持全文现代中文可读
 - 直接输出润稿后的完整故事正文
 
@@ -284,6 +297,9 @@ seed["opening_mode"] = "$opening_mode"
 seed["story_date"] = "$TODAY"
 seed["generator"] = "daily-horror"
 seed["polish_pass"] = True
+seed["selected_axes"] = [x for x in """$selected_axes""".split("; ") if x]
+seed["axis_details"] = [x for x in """$axis_details""".split("; ") if x]
+seed["nonhuman_pressure"] = "$nonhuman_pressure"
 try:
     seed["opening_check"] = json.loads(Path("$HOOK_REPORT").read_text(encoding="utf-8"))
 except Exception:

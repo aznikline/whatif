@@ -93,6 +93,50 @@ STYLE_TEMPLATES = {
     "urban-cold-dread": "从合租房、电梯、办公楼、末班地铁、医院走廊、跑腿、代驾、外卖柜或监控屏幕切入，让冰冷秩序里先出现一处细小偏差。",
 }
 
+IMAGINATION_AXES = {
+    "animals": [
+        "候鸟认路却飞回废弃码头",
+        "黑猫总守着不该有门牌的门口",
+        "河里的东西只在有人报名字时浮头",
+        "站点里的流浪狗只对某一类包裹低吼",
+    ],
+    "plants": [
+        "潮湿墙缝里的霉会沿着名字生长",
+        "河滩杂草只在夜里朝旧宅方向倒伏",
+        "香灰里长出的芽会缠上旧物",
+        "温室作物在播报声里改换气味",
+    ],
+    "new-jobs": [
+        "夜班代收员",
+        "无人机测绘员",
+        "殡仪化妆师",
+        "直播场控",
+        "养老院夜护工",
+        "温室巡检员",
+        "垃圾分拣员",
+    ],
+    "sci-fi-devices": [
+        "自动归属系统",
+        "智能播报盒",
+        "识别眼镜",
+        "无人机喇叭",
+        "语音替身设备",
+        "气味采样仪",
+    ],
+    "cosmic-rules": [
+        "每次被正确命名的东西都会向人间靠近一步",
+        "某些包裹一旦签收就不再属于活人",
+        "旧河道记住的名字比户籍系统更多",
+        "地方上有一套只在夜里生效的归档规则",
+    ],
+    "body-object": [
+        "纸张会吸走人的体温",
+        "塑料外壳开始长出像指甲一样的薄层",
+        "人的气味会被旧布料记住",
+        "毛发会朝着某个门牌方向弯曲",
+    ],
+}
+
 
 def read_recent_styles(limit: int = 5) -> list[str]:
     styles: list[str] = []
@@ -107,6 +151,21 @@ def read_recent_styles(limit: int = 5) -> list[str]:
         if len(styles) >= limit:
             break
     return styles
+
+
+def read_recent_axes(limit: int = 6) -> list[str]:
+    axes: list[str] = []
+    for meta in sorted(STORY_ROOT.glob("20*/*.meta.json"), reverse=True):
+        try:
+            payload = json.loads(meta.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for axis in payload.get("selected_axes", []):
+            if isinstance(axis, str) and axis not in axes:
+                axes.append(axis)
+        if len(axes) >= limit:
+            break
+    return axes[:limit]
 
 
 def score_styles(event_title: str, product_title: str) -> dict[str, int]:
@@ -203,6 +262,43 @@ def choose_opening_mode(style_key: str) -> str:
     return modes.get(style_key, "从一件普通生活细节中的反常变化切入")
 
 
+def choose_imagination_axes(style_key: str) -> tuple[list[str], list[str], str]:
+    recent_axes = read_recent_axes()
+    preferred = {
+        "social-dread": ["new-jobs", "cosmic-rules", "animals"],
+        "liaozhai-zhiguai": ["animals", "plants", "cosmic-rules", "body-object"],
+        "county-uncanny": ["animals", "new-jobs", "plants", "cosmic-rules"],
+        "product-intrusion": ["sci-fi-devices", "body-object", "animals"],
+        "urban-cold-dread": ["new-jobs", "sci-fi-devices", "body-object"],
+    }.get(style_key, ["new-jobs", "animals"])
+
+    selected: list[str] = []
+    for axis in preferred:
+        if axis not in recent_axes and axis not in selected:
+            selected.append(axis)
+        if len(selected) >= 2:
+            break
+
+    for axis in IMAGINATION_AXES:
+        if len(selected) >= 2:
+            break
+        if axis not in selected:
+            selected.append(axis)
+
+    details = [random.choice(IMAGINATION_AXES[axis]) for axis in selected]
+    nonhuman = random.choice([
+        "动物",
+        "植物",
+        "器物",
+        "水",
+        "风",
+        "菌",
+        "算法",
+        "地方禁忌",
+    ])
+    return selected, details, nonhuman
+
+
 def main() -> int:
     news = fetch_news()
     products = fetch_products()
@@ -222,6 +318,10 @@ def main() -> int:
     payload["recent_styles"] = recent_styles
     payload["opening_mode"] = choose_opening_mode(style_key)
     payload["style_template"] = STYLE_TEMPLATES.get(style_key, "")
+    axes, axis_details, nonhuman = choose_imagination_axes(style_key)
+    payload["selected_axes"] = axes
+    payload["axis_details"] = axis_details
+    payload["nonhuman_pressure"] = nonhuman
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 
