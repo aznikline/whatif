@@ -15,6 +15,7 @@ RAW_FILE="$RUN_DIR/agent.raw"
 JSON_FILE="$RUN_DIR/agent.json"
 TEXT_FILE="$RUN_DIR/agent.txt"
 POLISHED_FILE="$RUN_DIR/agent.polished.txt"
+HOOK_REPORT="$RUN_DIR/opening.check.json"
 SEED_FILE="$RUN_DIR/seeds.json"
 SOUL_SOURCE="$ROOT/products/daily-horror/AGENT_SOUL.md"
 SOUL_TARGET="$ROOT/.openclaw-state/workspaces/daily-horror/SOUL.md"
@@ -42,6 +43,7 @@ opening_mode="$(jq -r '.opening_mode // empty' "$SEED_FILE")"
 recent_styles="$(jq -r '.recent_styles[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
 news_titles="$(jq -r '.news[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 product_titles="$(jq -r '.products[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
+style_template="$(jq -r '.style_template // empty' "$SEED_FILE")"
 recent_titles="$(
   find "$ROOT/products/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
     sort |
@@ -86,6 +88,7 @@ prompt_primary=$(cat <<EOF
 - 今天优先风格：$picked_style_label
 - 选择原因：$picked_style_reason
 - 最近已用风格：$recent_styles
+- 本次优先采用的开头模板：$style_template
 
 结构节奏：
 - 开篇约250-350字：立刻给出异常、危险传闻、违和物件或失手事件，让人想继续读
@@ -169,6 +172,24 @@ $(cat "$TEXT_FILE")
 EOF
 }
 
+prompt_rewrite_opening() {
+  cat <<EOF
+你是一位中文惊悚小说编辑。下面这篇故事的开头不够抓人，或者异常信号不够早。请只做这件事：
+
+- 保留标题、人物、地点、主事件、世界设定和结尾方向
+- 重点重写前 3-5 段，让开头更快进入异常
+- 保证前 180-220 字内出现一个清晰的反常细节或危险信号
+- 开头必须从具体动作切入
+- 不要把细节写得过于工整、像机关
+- 风格仍以 $picked_style_label 为主，优先模板：$style_template
+- 保持全文现代中文可读
+- 直接输出润稿后的完整故事正文
+
+原稿如下：
+$(cat "$TEXT_FILE")
+EOF
+}
+
 run_agent_once() {
   local prompt="$1"
   local raw_file="$2"
@@ -217,6 +238,22 @@ run_polish_pass() {
   cp "$text_file" "$TEXT_FILE"
 }
 
+run_opening_rewrite_pass() {
+  local raw_file="$RUN_DIR/agent.opening.raw"
+  local json_file="$RUN_DIR/agent.opening.json"
+  local text_file="$RUN_DIR/agent.opening.txt"
+  local prompt=""
+
+  prompt="$(prompt_rewrite_opening)"
+  if ! run_agent_once "$prompt" "$raw_file"; then
+    return 1
+  fi
+  sed -n '/^{/,$p' "$raw_file" > "$json_file"
+  jq -r '.payloads[0].text // empty' "$json_file" > "$text_file"
+  [[ -s "$text_file" ]] || return 1
+  cp "$text_file" "$TEXT_FILE"
+}
+
 if ! run_agent_once "$prompt_primary" "$RAW_FILE" || ! extract_text; then
   mv "$RAW_FILE" "$RUN_DIR/agent.primary.raw" 2>/dev/null || true
   mv "$JSON_FILE" "$RUN_DIR/agent.primary.json" 2>/dev/null || true
@@ -228,6 +265,11 @@ if ! run_agent_once "$prompt_primary" "$RAW_FILE" || ! extract_text; then
 fi
 
 run_polish_pass || true
+python3 "$ROOT/ops/story/check_opening.py" "$TEXT_FILE" > "$HOOK_REPORT" || true
+if [[ "$(jq -r '.should_rewrite // false' "$HOOK_REPORT" 2>/dev/null)" == "true" ]]; then
+  run_opening_rewrite_pass || true
+  python3 "$ROOT/ops/story/check_opening.py" "$TEXT_FILE" > "$HOOK_REPORT" || true
+fi
 
 cp "$TEXT_FILE" "$OUT_FILE"
 python3 - <<PY
@@ -242,6 +284,10 @@ seed["opening_mode"] = "$opening_mode"
 seed["story_date"] = "$TODAY"
 seed["generator"] = "daily-horror"
 seed["polish_pass"] = True
+try:
+    seed["opening_check"] = json.loads(Path("$HOOK_REPORT").read_text(encoding="utf-8"))
+except Exception:
+    seed["opening_check"] = {}
 Path("$META_FILE").write_text(json.dumps(seed, ensure_ascii=False, indent=2), encoding="utf-8")
 PY
 python3 "$ROOT/ops/story/update_story_index.py"

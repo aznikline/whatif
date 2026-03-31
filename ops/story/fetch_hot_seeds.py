@@ -85,6 +85,14 @@ STYLE_LABELS = {
     "urban-cold-dread": "都市冷感惊悚",
 }
 
+STYLE_TEMPLATES = {
+    "social-dread": "从一个具体的办事动作或制度流程切入，例如录入、核查、签字、群通知、催缴或审核，然后让系统、表格、名单、标签开始悄悄失真。",
+    "liaozhai-zhiguai": "从夜路、旧宅、渡口、祠堂、纸物、梦醒、借宿、残页或香火规矩切入，让怪异先像地方人不愿讲透的旧例。",
+    "county-uncanny": "从县城老街、国道边、小旅馆、河道、集市、修车铺、殡葬店、广播喇叭或夜班岗位切入，让异常像地方传闻自己找上门。",
+    "product-intrusion": "从拆封、试用、绑定账号、售后回访、语音播报、直播样品、系统更新、快递签收或促销展示切入，让商品先完成一次不该有的举动。",
+    "urban-cold-dread": "从合租房、电梯、办公楼、末班地铁、医院走廊、跑腿、代驾、外卖柜或监控屏幕切入，让冰冷秩序里先出现一处细小偏差。",
+}
+
 
 def read_recent_styles(limit: int = 5) -> list[str]:
     styles: list[str] = []
@@ -213,6 +221,7 @@ def main() -> int:
     }
     payload["recent_styles"] = recent_styles
     payload["opening_mode"] = choose_opening_mode(style_key)
+    payload["style_template"] = STYLE_TEMPLATES.get(style_key, "")
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 
