@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-ROOT = Path("/Users/wizout/op/openclaw/stories/daily-horror")
+ROOT = Path("/Users/wizout/op/openclaw/products/daily-horror")
 README = ROOT / "README.md"
 
 

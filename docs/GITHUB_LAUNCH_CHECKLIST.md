@@ -26,7 +26,7 @@
    - `historical-fiction`
 3. 设置 Website 为 GitHub Pages 链接
 4. 设置 Social preview，优先使用：
-   - `prototype/gaiming-juchang-mvp/assets/cover.svg`
+   - `products/gaiming-juchang/assets/cover.svg`
 
 ## 首发内容建议
 

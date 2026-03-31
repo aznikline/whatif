@@ -49,7 +49,7 @@ Because the registry search hit rate limits, this project treats publisher choic
 3. Test the local media path:
 
 ```bash
-cd /Users/wizout/op/openclaw/projects/douyin-8d-nordic-pipeline
+cd /Users/wizout/op/openclaw/products/douyin-8d-nordic-pipeline
 ./scripts/make_8d_audio.sh /path/to/input.wav ./runs/test-8d.m4a
 ./scripts/compose_nordic_video.sh /path/to/nordic-footage.mp4 ./runs/test-8d.m4a ./runs/test-video.mp4
 ```

@@ -7,8 +7,8 @@ CONFIG_PATH="$STATE_DIR/openclaw.json"
 TODAY="${STORY_DATE_OVERRIDE:-$(date +%F)}"
 YEAR="${TODAY%%-*}"
 HARD_TIMEOUT="${DAILY_HORROR_HARD_TIMEOUT:-150}"
-STORY_DIR="$ROOT/stories/daily-horror/$YEAR"
-RUN_DIR="$ROOT/stories/daily-horror/.runs/$TODAY"
+STORY_DIR="$ROOT/products/daily-horror/$YEAR"
+RUN_DIR="$ROOT/products/daily-horror/.runs/$TODAY"
 OUT_FILE="$STORY_DIR/$TODAY.md"
 META_FILE="$STORY_DIR/$TODAY.meta.json"
 RAW_FILE="$RUN_DIR/agent.raw"
@@ -30,7 +30,7 @@ picked_product="$(jq -r '.picked_product.title // empty' "$SEED_FILE")"
 news_titles="$(jq -r '.news[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 product_titles="$(jq -r '.products[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 recent_titles="$(
-  find "$ROOT/stories/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
+  find "$ROOT/products/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
     sort |
     tail -n 5 |
     while read -r f; do head -n 1 "$f"; done |
@@ -141,7 +141,7 @@ cp "$TEXT_FILE" "$OUT_FILE"
 cp "$SEED_FILE" "$META_FILE"
 python3 "$ROOT/ops/story/update_story_index.py"
 
-git -C "$ROOT" add "$OUT_FILE" "$META_FILE" "$ROOT/stories/daily-horror/README.md"
+git -C "$ROOT" add "$OUT_FILE" "$META_FILE" "$ROOT/products/daily-horror/README.md"
 if ! git -C "$ROOT" diff --cached --quiet; then
   git -C "$ROOT" commit -m "story: daily horror for $TODAY"
   git -C "$ROOT" push origin master

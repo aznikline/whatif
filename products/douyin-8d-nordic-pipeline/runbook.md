@@ -37,7 +37,7 @@
   - n8n execution failure branch
   - review queue artifact written locally
 - Review queue location:
-  - `/Users/wizout/op/openclaw/projects/douyin-8d-nordic-pipeline/review`
+  - `/Users/wizout/op/openclaw/products/douyin-8d-nordic-pipeline/review`
 
 ## Logging & Audit
 - Run ID:

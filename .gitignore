@@ -21,6 +21,7 @@ vendor/
 skills/
 ops/
 openclawmp-skill/
+products/daily-horror/.runs/
 
 # Project-local config/state not needed for public repo
 openclaw.json

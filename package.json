@@ -1,0 +1,17 @@
+{
+  "name": "whatif-studio",
+  "private": true,
+  "scripts": {
+    "oc:health": "./ops/bin/health-check.sh",
+    "oc:audit:skills": "./ops/bin/skill-audit.sh",
+    "oc:smoke:tavily": "./ops/bin/tavily-smoke.sh",
+    "oc:smoke:tavily:live": "./ops/bin/tavily-smoke.sh --network",
+    "oc:iterate": "./ops/bin/full-iteration.sh",
+    "oc:promptfoo": "./ops/bin/promptfoo-run.sh",
+    "oc:harness": "./ops/bin/openclaw-harness.sh",
+    "oc:tavily:bridge": "./ops/bin/tavily-bridge.sh"
+  },
+  "dependencies": {
+    "clawhub": "^0.7.0"
+  }
+}
