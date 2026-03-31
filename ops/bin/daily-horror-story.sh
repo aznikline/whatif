@@ -14,6 +14,7 @@ META_FILE="$STORY_DIR/$TODAY.meta.json"
 RAW_FILE="$RUN_DIR/agent.raw"
 JSON_FILE="$RUN_DIR/agent.json"
 TEXT_FILE="$RUN_DIR/agent.txt"
+POLISHED_FILE="$RUN_DIR/agent.polished.txt"
 SEED_FILE="$RUN_DIR/seeds.json"
 SOUL_SOURCE="$ROOT/products/daily-horror/AGENT_SOUL.md"
 SOUL_TARGET="$ROOT/.openclaw-state/workspaces/daily-horror/SOUL.md"
@@ -143,6 +144,31 @@ prompt_fallback=$(cat <<EOF
 EOF
 )
 
+prompt_polish() {
+  cat <<EOF
+你是一位非常严格的中文惊悚小说编辑。请对下面这篇短篇做一次“保留故事骨架、只修表达和局部细节”的润稿。
+
+你的目标只有四个：
+1. 删掉所有显得刻意、工整、太像作者在摆机关的句子或细节。
+2. 让开头更抓人，但不要换题材，不要重写成另一篇。
+3. 让志怪和怪谈部分更像从地方禁忌、旧档案、口耳相传、现实办事逻辑里长出来。
+4. 保持现代中文可读性，保留原有标题、人物、地点、主事件和结尾方向。
+
+硬规则：
+- 不要改变标题
+- 不要改变主角姓名、地点名、核心设定、结尾方向
+- 不要新增大段设定，不要发明另一套世界观
+- 可以删改句子、替换细节、重写开头几段、压缩用力过猛的段落
+- 如果遇到明显刻意的数字、价格、日期、门牌、库存、对仗数字设计，把它改得更自然
+- 如果某段太像说明书或背景介绍，把它改成动作、对话、物件、气味、光线或人的反应
+- 如果某个离奇点没有现实支点，就补一个小支点：旧记录、街坊回避、职业经验、庙口闲话、档案残页、地契、旧规矩
+- 只输出润稿后的完整故事正文
+
+下面是待润稿的故事：
+$(cat "$TEXT_FILE")
+EOF
+}
+
 run_agent_once() {
   local prompt="$1"
   local raw_file="$2"
@@ -174,6 +200,23 @@ extract_text() {
   [[ -s "$TEXT_FILE" ]]
 }
 
+run_polish_pass() {
+  local raw_file="$RUN_DIR/agent.polish.raw"
+  local json_file="$RUN_DIR/agent.polish.json"
+  local text_file="$RUN_DIR/agent.polish.txt"
+  local prompt=""
+
+  prompt="$(prompt_polish)"
+  if ! run_agent_once "$prompt" "$raw_file"; then
+    return 1
+  fi
+  sed -n '/^{/,$p' "$raw_file" > "$json_file"
+  jq -r '.payloads[0].text // empty' "$json_file" > "$text_file"
+  [[ -s "$text_file" ]] || return 1
+  cp "$text_file" "$POLISHED_FILE"
+  cp "$text_file" "$TEXT_FILE"
+}
+
 if ! run_agent_once "$prompt_primary" "$RAW_FILE" || ! extract_text; then
   mv "$RAW_FILE" "$RUN_DIR/agent.primary.raw" 2>/dev/null || true
   mv "$JSON_FILE" "$RUN_DIR/agent.primary.json" 2>/dev/null || true
@@ -183,6 +226,8 @@ if ! run_agent_once "$prompt_primary" "$RAW_FILE" || ! extract_text; then
     exit 1
   fi
 fi
+
+run_polish_pass || true
 
 cp "$TEXT_FILE" "$OUT_FILE"
 python3 - <<PY
@@ -196,6 +241,7 @@ seed["style_reason"] = "$picked_style_reason"
 seed["opening_mode"] = "$opening_mode"
 seed["story_date"] = "$TODAY"
 seed["generator"] = "daily-horror"
+seed["polish_pass"] = True
 Path("$META_FILE").write_text(json.dumps(seed, ensure_ascii=False, indent=2), encoding="utf-8")
 PY
 python3 "$ROOT/ops/story/update_story_index.py"

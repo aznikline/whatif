@@ -39,6 +39,7 @@
 - each story stores `selected_style`, `style_reason`, and `opening_mode` in metadata
 - the runtime script syncs `products/daily-horror/AGENT_SOUL.md` into the live workspace before generation
 - prompts now include a plausibility guard to suppress heavy-handed prices, numbers, and contrived symbolic setups
+- after the first draft, the pipeline runs a second editorial pass to sand down contrived gimmicks and strengthen lived-in detail
 
 ## Sources
 - Google News RSS for current events
