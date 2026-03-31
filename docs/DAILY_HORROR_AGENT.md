@@ -28,8 +28,10 @@
   - county-town / small-city uncanny tales
   - product-object / gadget intrusion horror
   - cold urban dread
+  - cosmic dread / Lovecraft-adjacent unknowability
 - horror details should feel lived-in before they feel symbolic
 - Liaozhai-inspired modes should grow from taboo, rumor, lineage, water routes, temples, trades, and old records rather than random spooky ornament
+- cosmic-dread modes should emphasize scale mismatch, failed naming, measurement drift, and partial perception rather than stock tentacles or lore dumping
 - avoid conspicuous numeric symbolism or over-designed coincidences unless they are naturally motivated and paid off
 
 ## Generation Mechanics
@@ -51,6 +53,10 @@
 - after polishing, an opening checker scores the first section; if the hook is too weak, the pipeline rewrites the opening once
 - the SOUL now explicitly bans consecutive reuse of the same main job, main scene, or stale mechanism cluster
 - Liaozhai-style branches must carry a concrete local taboo or route rule; cosmic-rule branches must produce an actionable rule with a visible cost, not abstract lore
+- Lovecraft-adjacent branches are treated as a craft constraint, not a monster skin:
+  - the unknown should be approached through effects and side channels
+  - the text should avoid generic “unknowable” filler
+  - the protagonist should confront a reality larger than human categories while still trapped in ordinary labor
 - `fetch_hot_seeds.py` supports forced canary routing through env vars such as `DAILY_HORROR_FORCE_STYLE`, `DAILY_HORROR_FORCE_ENGINE`, `DAILY_HORROR_FORCE_SCENE`, and `DAILY_HORROR_FORCE_TABOO`
 
 ## Sources
