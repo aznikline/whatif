@@ -35,6 +35,7 @@
 这些不是对外产品，而是内部生产工具或工作流。
 
 - `projects/autopaper`: idea-to-paper 论文生产链
+- `projects/cs146s-study`: CS146S 系统性学习笔记与课程拆解
 - `ops/`: 自动化脚本、launchd、运维工具
 - `memory/`: 持久化记忆文件与索引源
 
@@ -47,6 +48,7 @@ products/
   daily-horror/
 projects/
   autopaper/
+  cs146s-study/
 ops/
 docs/
 memory/

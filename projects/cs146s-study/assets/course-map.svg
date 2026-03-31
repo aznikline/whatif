@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" fill="none">
+  <rect width="1400" height="820" fill="#f4f1ea"/>
+  <text x="60" y="78" font-family="Georgia, serif" font-size="40" fill="#1d2a36">CS146S Course Map</text>
+  <text x="60" y="112" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#58636d">The Modern Software Developer: from prompting to post-deployment operations</text>
+
+  <rect x="60" y="160" width="280" height="150" rx="18" fill="#dde8d5" stroke="#4a6b50" stroke-width="2"/>
+  <text x="82" y="200" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="24" fill="#1d2a36">Weeks 1-3</text>
+  <text x="82" y="236" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Model literacy</text>
+  <text x="82" y="264" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Prompting</text>
+  <text x="82" y="292" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Agents, MCP, context</text>
+
+  <rect x="390" y="160" width="280" height="150" rx="18" fill="#d8e7f5" stroke="#3a5f87" stroke-width="2"/>
+  <text x="412" y="200" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="24" fill="#1d2a36">Weeks 4-5</text>
+  <text x="412" y="236" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Agent patterns</text>
+  <text x="412" y="264" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Autonomy control</text>
+  <text x="412" y="292" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Terminal workflows</text>
+
+  <rect x="720" y="160" width="280" height="150" rx="18" fill="#f2dfd6" stroke="#8a4f42" stroke-width="2"/>
+  <text x="742" y="200" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="24" fill="#1d2a36">Weeks 6-7</text>
+  <text x="742" y="236" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Testing &amp; security</text>
+  <text x="742" y="264" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Code review</text>
+  <text x="742" y="292" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Trust and diagnostics</text>
+
+  <rect x="1050" y="160" width="280" height="150" rx="18" fill="#efe3f7" stroke="#6e4e8e" stroke-width="2"/>
+  <text x="1072" y="200" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="24" fill="#1d2a36">Weeks 8-10</text>
+  <text x="1072" y="236" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">App generation</text>
+  <text x="1072" y="264" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Observability</text>
+  <text x="1072" y="292" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">Future developer roles</text>
+
+  <path d="M340 235H390" stroke="#1d2a36" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M670 235H720" stroke="#1d2a36" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M1000 235H1050" stroke="#1d2a36" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <rect x="120" y="420" width="1160" height="260" rx="22" fill="#fffaf2" stroke="#bcae95" stroke-width="2"/>
+  <text x="150" y="465" font-family="Georgia, serif" font-size="30" fill="#1d2a36">Persistent engineering loop taught by the course</text>
+  <text x="155" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Spec</text>
+  <circle cx="250" cy="518" r="7" fill="#1d2a36"/>
+  <text x="280" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Generate</text>
+  <circle cx="420" cy="518" r="7" fill="#1d2a36"/>
+  <text x="450" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Test</text>
+  <circle cx="535" cy="518" r="7" fill="#1d2a36"/>
+  <text x="565" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Review</text>
+  <circle cx="675" cy="518" r="7" fill="#1d2a36"/>
+  <text x="705" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Secure</text>
+  <circle cx="825" cy="518" r="7" fill="#1d2a36"/>
+  <text x="855" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Deploy</text>
+  <circle cx="980" cy="518" r="7" fill="#1d2a36"/>
+  <text x="1010" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Observe</text>
+  <circle cx="1135" cy="518" r="7" fill="#1d2a36"/>
+  <text x="1165" y="525" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Adapt</text>
+
+  <text x="155" y="590" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#58636d">The course treats AI-native development as a full lifecycle, not a prompt-only skill.</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#1d2a36"/>
+    </marker>
+  </defs>
+</svg>

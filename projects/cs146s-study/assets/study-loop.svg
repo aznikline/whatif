@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" fill="none">
+  <rect width="1200" height="700" fill="#f8f7f4"/>
+  <text x="60" y="74" font-family="Georgia, serif" font-size="38" fill="#1d2a36">Recommended Self-Study Loop</text>
+  <text x="60" y="108" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#58636d">Convert each week into a reusable engineering habit</text>
+
+  <circle cx="600" cy="380" r="210" fill="#ffffff" stroke="#c4c8cc" stroke-width="2"/>
+  <circle cx="600" cy="380" r="90" fill="#1d2a36"/>
+  <text x="552" y="372" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#ffffff" font-weight="700">CS146S</text>
+  <text x="534" y="404" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#d9e0e6">Study loop</text>
+
+  <rect x="515" y="115" width="170" height="72" rx="16" fill="#dde8d5" stroke="#4a6b50" stroke-width="2"/>
+  <text x="560" y="158" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Read</text>
+
+  <rect x="845" y="255" width="190" height="72" rx="16" fill="#d8e7f5" stroke="#3a5f87" stroke-width="2"/>
+  <text x="886" y="298" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Build</text>
+
+  <rect x="825" y="510" width="220" height="72" rx="16" fill="#f2dfd6" stroke="#8a4f42" stroke-width="2"/>
+  <text x="885" y="553" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Verify</text>
+
+  <rect x="160" y="510" width="230" height="72" rx="16" fill="#efe3f7" stroke="#6e4e8e" stroke-width="2"/>
+  <text x="222" y="553" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Reflect</text>
+
+  <rect x="155" y="255" width="230" height="72" rx="16" fill="#f5ebcf" stroke="#9e7a24" stroke-width="2"/>
+  <text x="203" y="298" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">Operationalize</text>
+
+  <path d="M600 187 C745 210 848 230 940 255" stroke="#1d2a36" stroke-width="4" fill="none" marker-end="url(#arrow2)"/>
+  <path d="M1035 327 C1045 410 1020 475 935 510" stroke="#1d2a36" stroke-width="4" fill="none" marker-end="url(#arrow2)"/>
+  <path d="M825 546 C690 620 480 622 390 546" stroke="#1d2a36" stroke-width="4" fill="none" marker-end="url(#arrow2)"/>
+  <path d="M275 510 C182 470 150 385 190 327" stroke="#1d2a36" stroke-width="4" fill="none" marker-end="url(#arrow2)"/>
+  <path d="M270 255 C352 190 460 170 515 152" stroke="#1d2a36" stroke-width="4" fill="none" marker-end="url(#arrow2)"/>
+
+  <text x="70" y="655" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#58636d">Recommended rhythm: read the official material, reproduce a workflow, verify it with tests or review, then fold the lesson back into your own engineering environment.</text>
+
+  <defs>
+    <marker id="arrow2" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#1d2a36"/>
+    </marker>
+  </defs>
+</svg>
