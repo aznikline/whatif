@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="760" viewBox="0 0 1300 760" fill="none">
+  <rect width="1300" height="760" fill="#f6f3ed"/>
+  <text x="60" y="76" font-family="Georgia, serif" font-size="40" fill="#1d2a36">Vibe Coding for Beginners</text>
+  <text x="60" y="110" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#5b656d">The difference between raw generation and actual engineering</text>
+
+  <rect x="70" y="170" width="470" height="470" rx="24" fill="#f4ddd5" stroke="#8a4f42" stroke-width="2"/>
+  <text x="100" y="220" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#1d2a36">Raw vibe coding</text>
+  <text x="105" y="275" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">1. Ask for a big feature</text>
+  <text x="105" y="320" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">2. Accept lots of generated code</text>
+  <text x="105" y="365" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">3. Skip tests and review</text>
+  <text x="105" y="410" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">4. Get stuck later</text>
+  <text x="105" y="485" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#5b656d">Typical outcome:</text>
+  <text x="105" y="520" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#5b656d">fast visible progress, weak understanding,</text>
+  <text x="105" y="550" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#5b656d">hidden bugs, fragile codebase</text>
+
+  <rect x="760" y="170" width="470" height="470" rx="24" fill="#dce8d7" stroke="#4a6b50" stroke-width="2"/>
+  <text x="790" y="220" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#1d2a36">CS146S-style workflow</text>
+  <text x="795" y="275" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">1. Write a small spec</text>
+  <text x="795" y="320" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">2. Ask for one bounded change</text>
+  <text x="795" y="365" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">3. Inspect files and behavior</text>
+  <text x="795" y="410" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#1d2a36">4. Test, review, secure, repeat</text>
+  <text x="795" y="485" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#5b656d">Typical outcome:</text>
+  <text x="795" y="520" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#5b656d">slower than pure hype, but understandable,</text>
+  <text x="795" y="550" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#5b656d">verifiable, and reusable</text>
+
+  <path d="M560 405H740" stroke="#1d2a36" stroke-width="5" marker-end="url(#arrow3)"/>
+  <text x="592" y="390" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#1d2a36">discipline</text>
+
+  <text x="70" y="700" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#5b656d">The beginner goal is not to stop using AI. The goal is to make AI output legible, testable, and safe enough to keep.</text>
+  <defs>
+    <marker id="arrow3" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#1d2a36"/>
+    </marker>
+  </defs>
+</svg>

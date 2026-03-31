@@ -18,8 +18,22 @@ This internal project tracks the course structure, weekly themes, assignment pat
 
 See [sources.md](./sources.md) for the curated source list used in these notes.
 
+## Recommended Reading Order
+
+If this is your first time learning AI-assisted software development, read in this order:
+
+1. [00a-vibe-coding-primer.md](./notes/00a-vibe-coding-primer.md)
+2. [05-glossary.md](./notes/05-glossary.md)
+3. [00-course-overview.md](./notes/00-course-overview.md)
+4. [01-weekly-map.md](./notes/01-weekly-map.md)
+5. [02-core-principles.md](./notes/02-core-principles.md)
+6. [03-assignment-patterns.md](./notes/03-assignment-patterns.md)
+7. [04-study-plan.md](./notes/04-study-plan.md)
+
 ## Notes
 
+- [00a-vibe-coding-primer.md](./notes/00a-vibe-coding-primer.md)
+- [05-glossary.md](./notes/05-glossary.md)
 - [00-course-overview.md](./notes/00-course-overview.md)
 - [01-weekly-map.md](./notes/01-weekly-map.md)
 - [02-core-principles.md](./notes/02-core-principles.md)
@@ -31,6 +45,8 @@ See [sources.md](./sources.md) for the curated source list used in these notes.
 ![Course Map](./assets/course-map.svg)
 
 ![Study Loop](./assets/study-loop.svg)
+
+![Vibe Coding Basics](./assets/vibe-coding-basics.svg)
 
 ## Key Takeaway
 
