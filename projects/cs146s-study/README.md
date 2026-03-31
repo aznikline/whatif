@@ -28,7 +28,8 @@ If this is your first time learning AI-assisted software development, read in th
 4. [01-weekly-map.md](./notes/01-weekly-map.md)
 5. [02-core-principles.md](./notes/02-core-principles.md)
 6. [03-assignment-patterns.md](./notes/03-assignment-patterns.md)
-7. [04-study-plan.md](./notes/04-study-plan.md)
+7. [06-practical-lessons.md](./notes/06-practical-lessons.md)
+8. [04-study-plan.md](./notes/04-study-plan.md)
 
 ## Notes
 
@@ -38,6 +39,7 @@ If this is your first time learning AI-assisted software development, read in th
 - [01-weekly-map.md](./notes/01-weekly-map.md)
 - [02-core-principles.md](./notes/02-core-principles.md)
 - [03-assignment-patterns.md](./notes/03-assignment-patterns.md)
+- [06-practical-lessons.md](./notes/06-practical-lessons.md)
 - [04-study-plan.md](./notes/04-study-plan.md)
 
 ## Visuals
