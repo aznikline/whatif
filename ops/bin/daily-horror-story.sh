@@ -20,6 +20,7 @@ PROMPT_FALLBACK="$RUN_DIR/prompt.fallback.txt"
 PROMPT_POLISH="$RUN_DIR/prompt.polish.txt"
 PROMPT_OPENING="$RUN_DIR/prompt.opening.txt"
 PROMPT_DERUTIFY="$RUN_DIR/prompt.derutify.txt"
+PROMPT_COMPRESS="$RUN_DIR/prompt.compress.txt"
 SOUL_SOURCE="$ROOT/products/daily-horror/AGENT_SOUL.md"
 SOUL_TARGET="$ROOT/.openclaw-state/workspaces/daily-horror/SOUL.md"
 
@@ -260,6 +261,38 @@ EOF
 generate_once "$PROMPT_DERUTIFY" "$RUN_DIR/derutify.txt" "$RUN_DIR/derutify.raw.json" "$RUN_DIR/derutify.meta.json" || true
 if [[ -s "$RUN_DIR/derutify.txt" ]]; then
   cp "$RUN_DIR/derutify.txt" "$TEXT_FILE"
+fi
+
+cat > "$PROMPT_COMPRESS" <<EOF
+你现在只做一件事：压缩这篇惊悚小说里“像设定说明书”的段落。
+
+目标：
+1. 把解释世界规则、背景来历、前情梗概的段落压短。
+2. 能用动作、对话、传闻、器物细节表达的，就不要用说明句直说。
+3. 保留故事骨架、人物、结尾和关键禁忌，不要改成另一篇。
+4. 让叙事更像小说，不像作者在旁边解释自己为什么这样设定。
+
+本次必须保留：
+- 故事引擎：${story_engine}（${story_engine_prompt}）
+- 主场景：${scene_frame}
+- 地方禁忌：${taboo_rule}
+- 主职业：${job_anchor}
+- 主意象：${imagery_anchor}
+
+压缩原则：
+- 一段里如果连续两句都在解释“为什么会这样”，至少删掉一句，改成可见细节。
+- 如果某句是在给读者讲规则，而不是让人物遭遇规则，就把它改成角色记忆、老人闲话、墙上残句、工作守则、物件痕迹。
+- 如果一段里抽象名词过多，就补具体物件和动作，顺手删掉一半抽象词。
+
+只输出压缩后的完整正文。
+
+原稿如下：
+$(cat "$TEXT_FILE")
+EOF
+
+generate_once "$PROMPT_COMPRESS" "$RUN_DIR/compress.txt" "$RUN_DIR/compress.raw.json" "$RUN_DIR/compress.meta.json" || true
+if [[ -s "$RUN_DIR/compress.txt" ]]; then
+  cp "$RUN_DIR/compress.txt" "$TEXT_FILE"
 fi
 
 python3 "$ROOT/ops/story/check_opening.py" "$TEXT_FILE" > "$HOOK_REPORT" || true

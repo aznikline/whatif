@@ -153,6 +153,21 @@ STORY_ENGINES = {
         "prompt": "让人沿着一条本来服务于贸易、祭祀、探访或巡回工作的路线，误入另一套旧秩序。",
         "fits": ["liaozhai-zhiguai", "county-uncanny", "urban-cold-dread"],
     },
+    "avian-tribute": {
+        "label": "羽税",
+        "prompt": "让鸟、羽毛、鸣叫、归巢或迁徙规律成为一种地方税则或旧债收取方式，人必须为某种看不见的账目付出代价。",
+        "fits": ["liaozhai-zhiguai", "county-uncanny", "urban-cold-dread"],
+    },
+    "vegetal-memory": {
+        "label": "草木记名",
+        "prompt": "让草木、菌丝、树皮、药渣、花粉或河滩植物记录并反向索取人的名字、气味或动作。",
+        "fits": ["liaozhai-zhiguai", "county-uncanny", "social-dread"],
+    },
+    "calendar-debt": {
+        "label": "历债",
+        "prompt": "让地方上存在一套与日期、节令、轮值、借还、报数或点灯有关的旧债算法，主角在日常营生中被迫偿付。",
+        "fits": ["liaozhai-zhiguai", "social-dread", "urban-cold-dread"],
+    },
 }
 
 SCENE_FRAMES = {
@@ -504,7 +519,7 @@ def choose_imagination_axes(style_key: str) -> tuple[list[str], list[str], str]:
     return selected, details, nonhuman
 
 
-def choose_story_engine(style_key: str, banned_mechanisms: list[str]) -> tuple[str, str]:
+def choose_story_engine(style_key: str, banned_mechanisms: list[str], axes: list[str], nonhuman: str) -> tuple[str, str]:
     forced = os.getenv("DAILY_HORROR_FORCE_ENGINE", "").strip()
     if forced in STORY_ENGINES:
         return forced, STORY_ENGINES[forced]["prompt"]
@@ -519,6 +534,20 @@ def choose_story_engine(style_key: str, banned_mechanisms: list[str]) -> tuple[s
         if "system-glitch" in banned_mechanisms and key in {"cosmic-counting"}:
             score += 1
         if "archive-return" in banned_mechanisms and key in {"animal-contract", "itinerant-wonder", "botanical-takeover"}:
+            score += 1
+        if "animals" in axes and key in {"animal-contract", "avian-tribute"}:
+            score += 2
+        if "plants" in axes and key in {"botanical-takeover", "vegetal-memory", "borrowed-season"}:
+            score += 2
+        if "cosmic-rules" in axes and key in {"cosmic-counting", "calendar-debt", "pilgrim-route"}:
+            score += 2
+        if "body-object" in axes and key in {"body-transference", "craft-curse"}:
+            score += 1
+        if nonhuman in {"动物"} and key in {"animal-contract", "avian-tribute"}:
+            score += 1
+        if nonhuman in {"植物", "菌"} and key in {"botanical-takeover", "vegetal-memory"}:
+            score += 1
+        if nonhuman in {"地方禁忌", "计数规则"} and key in {"cosmic-counting", "calendar-debt", "pilgrim-route"}:
             score += 1
         candidates.append((score, key))
     candidates.sort(reverse=True)
@@ -588,7 +617,7 @@ def main() -> int:
     style_key, style_reason, recent_styles = choose_style(event_title, product_title)
     banned_mechanisms = detect_banned_mechanisms()
     axes, axis_details, nonhuman = choose_imagination_axes(style_key)
-    story_engine_key, story_engine_prompt = choose_story_engine(style_key, banned_mechanisms)
+    story_engine_key, story_engine_prompt = choose_story_engine(style_key, banned_mechanisms, axes, nonhuman)
     scene_frame = choose_scene_frame(style_key)
     taboo_rule = choose_taboo_rule(style_key)
     job_anchor = choose_job_anchor(style_key)
