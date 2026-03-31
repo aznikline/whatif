@@ -11,6 +11,8 @@
 ## Entry Points
 - manual run: `/Users/wizout/op/openclaw/ops/bin/daily-horror-story.sh`
 - launchd install: `/Users/wizout/op/openclaw/ops/bin/install-daily-horror.sh`
+- runtime SOUL source of truth: `products/daily-horror/AGENT_SOUL.md`
+- runtime SOUL sync helper: `products/daily-horror/sync_runtime_soul.sh`
 
 ## Output
 - story markdown: `products/daily-horror/YYYY/YYYY-MM-DD.md`
@@ -26,6 +28,13 @@
   - county-town / small-city uncanny tales
   - product-object / gadget intrusion horror
   - cold urban dread
+
+## Generation Mechanics
+- one current event seed and one product seed are fetched first
+- the system scores them into a preferred style family
+- recent styles are read from prior `.meta.json` files to avoid repeating the same voice
+- each story stores `selected_style`, `style_reason`, and `opening_mode` in metadata
+- the runtime script syncs `products/daily-horror/AGENT_SOUL.md` into the live workspace before generation
 
 ## Sources
 - Google News RSS for current events

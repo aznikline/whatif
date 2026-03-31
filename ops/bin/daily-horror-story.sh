@@ -15,8 +15,15 @@ RAW_FILE="$RUN_DIR/agent.raw"
 JSON_FILE="$RUN_DIR/agent.json"
 TEXT_FILE="$RUN_DIR/agent.txt"
 SEED_FILE="$RUN_DIR/seeds.json"
+SOUL_SOURCE="$ROOT/products/daily-horror/AGENT_SOUL.md"
+SOUL_TARGET="$ROOT/.openclaw-state/workspaces/daily-horror/SOUL.md"
 
 mkdir -p "$STORY_DIR" "$RUN_DIR"
+
+if [[ -f "$SOUL_SOURCE" ]]; then
+  mkdir -p "$(dirname "$SOUL_TARGET")"
+  cp "$SOUL_SOURCE" "$SOUL_TARGET"
+fi
 
 if [[ -f "$OUT_FILE" ]]; then
   echo "story already exists: $OUT_FILE"
@@ -27,6 +34,11 @@ python3 "$ROOT/ops/story/fetch_hot_seeds.py" > "$SEED_FILE"
 
 picked_event="$(jq -r '.picked_event.title // empty' "$SEED_FILE")"
 picked_product="$(jq -r '.picked_product.title // empty' "$SEED_FILE")"
+picked_style_key="$(jq -r '.picked_style.key // empty' "$SEED_FILE")"
+picked_style_label="$(jq -r '.picked_style.label // empty' "$SEED_FILE")"
+picked_style_reason="$(jq -r '.picked_style.reason // empty' "$SEED_FILE")"
+opening_mode="$(jq -r '.opening_mode // empty' "$SEED_FILE")"
+recent_styles="$(jq -r '.recent_styles[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
 news_titles="$(jq -r '.news[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 product_titles="$(jq -r '.products[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 recent_titles="$(
@@ -58,6 +70,9 @@ prompt_primary=$(cat <<EOF
   4. 商品异化恐怖
   5. 都市冷感惊悚
 - 可以混合两种谱系，但要保持统一，不要写成拼盘。
+- 今天优先风格：$picked_style_label
+- 选择原因：$picked_style_reason
+- 最近已用风格：$recent_styles
 
 结构节奏：
 - 开篇约250-350字：立刻给出异常、危险传闻、违和物件或失手事件，让人想继续读
@@ -83,6 +98,7 @@ prompt_primary=$(cat <<EOF
 - 可以把热点事件转成小镇流言、直播事故、社区恐慌、旧商业街传闻
 - 可以把热门产品转成道具、玩具、直播设备、应用、智能硬件或廉价促销品
 - 不要直接复用近期标题：$recent_titles
+- 开头切入方式优先用这个动作模型：$opening_mode
 - 如果种子更像志怪材料，就允许写出聊斋气、因果感、夜路感、纸扎感、祠堂或渡口气息
 - 如果种子更像产品或互联网材料，就优先写商品如何侵入生活、关系和身体
 - 不要每篇都从“主角回到出租屋”开始，要主动变化开头动作和场景
@@ -153,7 +169,19 @@ if ! run_agent_once "$prompt_primary" "$RAW_FILE" || ! extract_text; then
 fi
 
 cp "$TEXT_FILE" "$OUT_FILE"
-cp "$SEED_FILE" "$META_FILE"
+python3 - <<PY
+import json
+from pathlib import Path
+
+seed = json.loads(Path("$SEED_FILE").read_text(encoding="utf-8"))
+seed["selected_style"] = "$picked_style_label"
+seed["selected_style_key"] = "$picked_style_key"
+seed["style_reason"] = "$picked_style_reason"
+seed["opening_mode"] = "$opening_mode"
+seed["story_date"] = "$TODAY"
+seed["generator"] = "daily-horror"
+Path("$META_FILE").write_text(json.dumps(seed, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
 python3 "$ROOT/ops/story/update_story_index.py"
 
 git -C "$ROOT" add "$OUT_FILE" "$META_FILE" "$ROOT/products/daily-horror/README.md"
