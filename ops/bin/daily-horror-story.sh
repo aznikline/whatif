@@ -47,10 +47,10 @@ recent_styles="$(jq -r '.recent_styles[]? // empty' "$SEED_FILE" | paste -sd '; 
 news_titles="$(jq -r '.news[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 product_titles="$(jq -r '.products[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
 style_template="$(jq -r '.style_template // empty' "$SEED_FILE")"
-selected_axes="$(jq -r '.selected_axes[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
-axis_details="$(jq -r '.axis_details[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
+selected_axes="$(jq -r '.selected_axes[]? // empty' "$SEED_FILE" | paste -sd ';' -)"
+axis_details="$(jq -r '.axis_details[]? // empty' "$SEED_FILE" | paste -sd ';' -)"
 nonhuman_pressure="$(jq -r '.nonhuman_pressure // empty' "$SEED_FILE")"
-banned_mechanisms="$(jq -r '.banned_mechanisms[]? // empty' "$SEED_FILE" | paste -sd '; ' -)"
+banned_mechanisms="$(jq -r '.banned_mechanisms[]? // empty' "$SEED_FILE" | paste -sd ';' -)"
 story_engine_key="$(jq -r '.story_engine_key // empty' "$SEED_FILE")"
 story_engine="$(jq -r '.story_engine // empty' "$SEED_FILE")"
 story_engine_prompt="$(jq -r '.story_engine_prompt // empty' "$SEED_FILE")"
@@ -63,6 +63,9 @@ recent_titles="$(
     sed '/^$/d' |
     paste -sd ';' -
 )"
+pretty_selected_axes="${selected_axes//;/; }"
+pretty_axis_details="${axis_details//;/; }"
+pretty_banned_mechanisms="${banned_mechanisms//;/; }"
 
 SEED_NUM="${DAILY_HORROR_SEED:-$random_nonce}"
 TEMPERATURE="$(python3 - <<PY
@@ -97,10 +100,10 @@ cat > "$PROMPT_PRIMARY" <<EOF
 - 开头动作模型：$opening_mode
 - 风格模板：$style_template
 - 故事引擎：${story_engine}（${story_engine_prompt}）
-- 强制想象轴：$selected_axes
-- 必须显式写进正文、且成为主骨架支点的陌生元素：$axis_details
+- 强制想象轴：$pretty_selected_axes
+- 必须显式写进正文、且成为主骨架支点的陌生元素：$pretty_axis_details
 - 非人压力源：$nonhuman_pressure
-- 禁止复用的近期机制：$banned_mechanisms
+- 禁止复用的近期机制：$pretty_banned_mechanisms
 - 随机扰动号：${SEED_NUM}（不要在正文显式写出这个数字）
 
 写法要求：
@@ -140,9 +143,9 @@ cat > "$PROMPT_FALLBACK" <<EOF
 约束：
 - 标题单独占第一行，不要加 markdown 星号
 - 200 字内必须出现异常钩子
-- 不要再围绕这些旧骨架打转：$banned_mechanisms
-- 本次必须真的使用这些陌生轴：$selected_axes
-- 正文里必须显式出现并推动情节的陌生支点：$axis_details
+- 不要再围绕这些旧骨架打转：$pretty_banned_mechanisms
+- 本次必须真的使用这些陌生轴：$pretty_selected_axes
+- 正文里必须显式出现并推动情节的陌生支点：$pretty_axis_details
 - 本次故事引擎是：${story_engine}（${story_engine_prompt}）
 - 本次非人压力源：$nonhuman_pressure
 - 本次参考的现实火种：$picked_event / $picked_product
@@ -188,7 +191,7 @@ cat > "$PROMPT_POLISH" <<EOF
 1. 删掉刻意、工整、太像作者在摆机关的句子。
 2. 把过于像模板的段落打散，换成更具体的动作、材质、气味、职业细节。
 3. 保留故事离奇性，但把现实支点补稳。
-4. 不要让故事滑回这些近期旧骨架：$banned_mechanisms
+4. 不要让故事滑回这些近期旧骨架：$pretty_banned_mechanisms
 5. 让这次的故事引擎更清楚：${story_engine}（${story_engine_prompt}）
 6. 如果故事偷懒回到“包裹、扫码、驿站、后台、名册”这类显眼近路，就把它改去更陌生的职业现场或地方规矩里
 
@@ -212,9 +215,9 @@ cat > "$PROMPT_DERUTIFY" <<EOF
 你现在做一次“反套路审查重写”。目标不是润色，而是找出这篇故事里仍然像通用对话模型平均输出的地方，并把它们改掉。
 
 必须做的事：
-1. 如果故事还在靠这些旧套路支撑：${banned_mechanisms}，就把它们削弱到次要位置或换成别的机制。
+1. 如果故事还在靠这些旧套路支撑：${pretty_banned_mechanisms}，就把它们削弱到次要位置或换成别的机制。
 2. 强化这次真正该有的陌生骨架：${story_engine}（${story_engine_prompt}）
-3. 让这些元素更早、更深地进入主骨架：$axis_details
+3. 让这些元素更早、更深地进入主骨架：$pretty_axis_details
 4. 让非人压力源 $nonhuman_pressure 真正推动情节，而不是只出现一次
 5. 把过于说明式的世界观解释改成传闻、动作、行话、物件细节
 
@@ -244,8 +247,8 @@ if [[ "$(jq -r '.should_rewrite // false' "$HOOK_REPORT" 2>/dev/null)" == "true"
 - 前 180-220 字内出现清晰异常
 - 从具体动作切入
 - 让故事引擎更早冒头：${story_engine}（${story_engine_prompt}）
-- 让陌生轴更早冒头：$axis_details
-- 不要写成旧套路：$banned_mechanisms
+- 让陌生轴更早冒头：$pretty_axis_details
+- 不要写成旧套路：$pretty_banned_mechanisms
 - 直接输出修改后的完整正文
 
 原稿如下：
@@ -270,10 +273,10 @@ seed["style_reason"] = "$picked_style_reason"
 seed["opening_mode"] = "$opening_mode"
 seed["story_date"] = "$TODAY"
 seed["generator"] = "daily-horror-direct"
-seed["selected_axes"] = [x for x in """$selected_axes""".split("; ") if x]
-seed["axis_details"] = [x for x in """$axis_details""".split("; ") if x]
+seed["selected_axes"] = [x.strip() for x in """$selected_axes""".split(";") if x.strip()]
+seed["axis_details"] = [x.strip() for x in """$axis_details""".split(";") if x.strip()]
 seed["nonhuman_pressure"] = "$nonhuman_pressure"
-seed["banned_mechanisms"] = [x for x in """$banned_mechanisms""".split("; ") if x]
+seed["banned_mechanisms"] = [x.strip() for x in """$banned_mechanisms""".split(";") if x.strip()]
 seed["story_engine_key"] = "$story_engine_key"
 seed["story_engine"] = "$story_engine"
 seed["story_engine_prompt"] = "$story_engine_prompt"
