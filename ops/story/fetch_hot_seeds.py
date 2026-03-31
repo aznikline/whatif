@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import random
 import re
 import urllib.request
@@ -35,6 +36,14 @@ STYLE_TEMPLATES = {
     "county-uncanny": "从县城老街、国道边、小旅馆、河道、修车铺、养殖场、殡葬铺、夜班岗位或广播喇叭切入，让异常像地方传闻自己找上门。",
     "product-intrusion": "从拆封、试用、摆样、维修、调试、返修、售后或直播演示切入，让商品先完成一次不该有的举动。",
     "urban-cold-dread": "从合租房、办公楼、商场后场、医院走廊、末班车、跑腿、代驾或外卖柜切入，让秩序中的细小偏差先出现。",
+}
+
+STYLE_HARD_MODES = {
+    "social-dread": "把恐怖写成协作、照护、排班、催办、营业、汇报这些日常机制里的失控，不要写成抽象后台报错。",
+    "liaozhai-zhiguai": "必须有门槛、借宿、渡口、祠堂、纸物、灯火、香灰、路引这类具体触点中的至少一种；必须有一条地方人知道但不愿解释透的禁忌；禁止退化成旧宅里突然出现一个女鬼。",
+    "county-uncanny": "必须把怪异长在县镇营生上：养殖、修理、跑车、看场、赶集、守夜、送货、巡塘、守灵；不要空写荒凉。",
+    "product-intrusion": "商品或设备必须真有手感、故障、返修、售后、试用、摆样、绑定、回访中的至少一环；禁止只写屏幕弹窗或纯数字异常。",
+    "urban-cold-dread": "必须从人流秩序、空间摩擦、夜班服务、公共设施里长出寒意；不要只靠压抑心情撑全文。",
 }
 
 IMAGINATION_AXES = {
@@ -85,6 +94,22 @@ IMAGINATION_AXES = {
         "毛发会朝着某个门牌方向弯曲",
         "木头会把摸过它的手纹慢慢顶出来",
     ],
+}
+
+JOB_ANCHORS = {
+    "social-dread": ["养老院夜护工", "培训机构后勤", "商场后场理货员", "社区食堂帮工", "夜间客服复核员"],
+    "liaozhai-zhiguai": ["纸扎铺学徒", "渡口守夜人", "偏庙香火照看人", "祠堂账房", "替人抄经的租客"],
+    "county-uncanny": ["温室巡检员", "养殖塘看守", "沿河修车工", "流动摊贩帮工", "民宿代管员"],
+    "product-intrusion": ["返修仓技师", "样品间陈列员", "售后回访员", "直播场控", "旧货摊翻新工"],
+    "urban-cold-dread": ["夜班医院运送员", "末班车保洁", "商场打烊巡场员", "老楼消防值守", "合租中介带看员"],
+}
+
+IMAGERY_ANCHORS = {
+    "social-dread": ["考勤表上的油印手汗", "后厨蒸汽里发潮的塑料牌", "食堂保温箱里不散的异味", "夜班灯带下发白的皮肤"],
+    "liaozhai-zhiguai": ["香灰里拱出来的细芽", "纸扎铺门后湿掉的灯笼骨", "渡口木桩上的潮痕", "祠堂梁上倒挂的旧羽毛"],
+    "county-uncanny": ["养殖塘水面的碎月亮", "温室塑料膜上的手印雾气", "国道边招牌被风翻出的白背面", "修车铺地上的机油虹彩"],
+    "product-intrusion": ["塑料外壳里渗出的体温雾", "样品包装边角长出的硬白薄片", "返修台金属托盘上的细小划痕", "柜台展示灯下发甜的焦味"],
+    "urban-cold-dread": ["地铁换乘口的潮冷回风", "旧写字楼消防门缝里的灰", "商场中庭夜里悬空的广播回声", "医院走廊尽头不会灭的绿灯"],
 }
 
 STORY_ENGINES = {
@@ -233,6 +258,18 @@ def fetch_products() -> list[dict[str, str]]:
     ]
 
 
+def normalize_meta_list(value) -> list[str]:
+    out: list[str] = []
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, str):
+                parts = [part.strip() for part in item.split(";") if part.strip()]
+                out.extend(parts or [item.strip()])
+    elif isinstance(value, str):
+        out.extend([part.strip() for part in value.split(";") if part.strip()])
+    return [item for item in out if item]
+
+
 def read_recent_meta(limit: int = 6) -> list[dict]:
     records: list[dict] = []
     for meta in sorted(STORY_ROOT.glob("20*/*.meta.json"), reverse=True):
@@ -259,8 +296,8 @@ def read_recent_styles(limit: int = 5) -> list[str]:
 def read_recent_axes(limit: int = 6) -> list[str]:
     axes: list[str] = []
     for payload in read_recent_meta(limit * 2):
-        for axis in payload.get("selected_axes", []):
-            if isinstance(axis, str) and axis not in axes:
+        for axis in normalize_meta_list(payload.get("selected_axes", [])):
+            if axis not in axes:
                 axes.append(axis)
         if len(axes) >= limit:
             break
@@ -270,8 +307,8 @@ def read_recent_axes(limit: int = 6) -> list[str]:
 def read_recent_axis_details(limit: int = 8) -> list[str]:
     details: list[str] = []
     for payload in read_recent_meta(limit * 2):
-        for detail in payload.get("axis_details", []):
-            if isinstance(detail, str) and detail not in details:
+        for detail in normalize_meta_list(payload.get("axis_details", [])):
+            if detail not in details:
                 details.append(detail)
         if len(details) >= limit:
             break
@@ -298,6 +335,28 @@ def read_recent_scene_frames(limit: int = 5) -> list[str]:
         if len(scenes) >= limit:
             break
     return scenes
+
+
+def read_recent_job_anchors(limit: int = 5) -> list[str]:
+    jobs: list[str] = []
+    for payload in read_recent_meta(limit * 2):
+        job = payload.get("job_anchor")
+        if isinstance(job, str) and job and job not in jobs:
+            jobs.append(job)
+        if len(jobs) >= limit:
+            break
+    return jobs
+
+
+def read_recent_imagery_anchors(limit: int = 6) -> list[str]:
+    motifs: list[str] = []
+    for payload in read_recent_meta(limit * 2):
+        motif = payload.get("imagery_anchor")
+        if isinstance(motif, str) and motif and motif not in motifs:
+            motifs.append(motif)
+        if len(motifs) >= limit:
+            break
+    return motifs
 
 
 def detect_banned_mechanisms(limit: int = 3) -> list[str]:
@@ -367,6 +426,9 @@ def score_styles(event_title: str, product_title: str) -> dict[str, int]:
 
 
 def choose_style(event_title: str, product_title: str) -> tuple[str, str, list[str]]:
+    forced = os.getenv("DAILY_HORROR_FORCE_STYLE", "").strip()
+    if forced in STYLE_LABELS:
+        return forced, "手动强制风格路由", read_recent_styles()
     recent = read_recent_styles()
     scores = score_styles(event_title, product_title)
     ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
@@ -443,6 +505,9 @@ def choose_imagination_axes(style_key: str) -> tuple[list[str], list[str], str]:
 
 
 def choose_story_engine(style_key: str, banned_mechanisms: list[str]) -> tuple[str, str]:
+    forced = os.getenv("DAILY_HORROR_FORCE_ENGINE", "").strip()
+    if forced in STORY_ENGINES:
+        return forced, STORY_ENGINES[forced]["prompt"]
     recent_engines = read_recent_engines()
     candidates = []
     for key, payload in STORY_ENGINES.items():
@@ -463,6 +528,9 @@ def choose_story_engine(style_key: str, banned_mechanisms: list[str]) -> tuple[s
 
 
 def choose_scene_frame(style_key: str) -> str:
+    forced = os.getenv("DAILY_HORROR_FORCE_SCENE", "").strip()
+    if forced:
+        return forced
     recent = read_recent_scene_frames()
     pool = SCENE_FRAMES.get(style_key, ["夜班岗位"])[:]
     random.shuffle(pool)
@@ -473,8 +541,31 @@ def choose_scene_frame(style_key: str) -> str:
 
 
 def choose_taboo_rule(style_key: str) -> str:
+    forced = os.getenv("DAILY_HORROR_FORCE_TABOO", "").strip()
+    if forced:
+        return forced
     pool = TABOO_RULES.get(style_key, ["同样的话不要问第二遍"])
     return random.choice(pool)
+
+
+def choose_job_anchor(style_key: str) -> str:
+    recent = read_recent_job_anchors()
+    pool = JOB_ANCHORS.get(style_key, ["夜班工人"])[:]
+    random.shuffle(pool)
+    for job in pool:
+        if job not in recent:
+            return job
+    return pool[0]
+
+
+def choose_imagery_anchor(style_key: str) -> str:
+    recent = read_recent_imagery_anchors()
+    pool = IMAGERY_ANCHORS.get(style_key, ["一块不该发亮的旧玻璃"])[:]
+    random.shuffle(pool)
+    for motif in pool:
+        if motif not in recent:
+            return motif
+    return pool[0]
 
 
 def stable_random_nonce(event_title: str, product_title: str) -> int:
@@ -500,6 +591,8 @@ def main() -> int:
     story_engine_key, story_engine_prompt = choose_story_engine(style_key, banned_mechanisms)
     scene_frame = choose_scene_frame(style_key)
     taboo_rule = choose_taboo_rule(style_key)
+    job_anchor = choose_job_anchor(style_key)
+    imagery_anchor = choose_imagery_anchor(style_key)
     random_nonce = stable_random_nonce(event_title, product_title)
 
     payload["picked_style"] = {
@@ -519,6 +612,9 @@ def main() -> int:
     payload["story_engine_prompt"] = story_engine_prompt
     payload["scene_frame"] = scene_frame
     payload["taboo_rule"] = taboo_rule
+    payload["job_anchor"] = job_anchor
+    payload["imagery_anchor"] = imagery_anchor
+    payload["style_hard_mode"] = STYLE_HARD_MODES.get(style_key, "")
     payload["random_nonce"] = random_nonce
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0

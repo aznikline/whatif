@@ -56,6 +56,9 @@ story_engine="$(jq -r '.story_engine // empty' "$SEED_FILE")"
 story_engine_prompt="$(jq -r '.story_engine_prompt // empty' "$SEED_FILE")"
 scene_frame="$(jq -r '.scene_frame // empty' "$SEED_FILE")"
 taboo_rule="$(jq -r '.taboo_rule // empty' "$SEED_FILE")"
+job_anchor="$(jq -r '.job_anchor // empty' "$SEED_FILE")"
+imagery_anchor="$(jq -r '.imagery_anchor // empty' "$SEED_FILE")"
+style_hard_mode="$(jq -r '.style_hard_mode // empty' "$SEED_FILE")"
 random_nonce="$(jq -r '.random_nonce // empty' "$SEED_FILE")"
 recent_titles="$(
   find "$ROOT/products/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
@@ -101,9 +104,12 @@ cat > "$PROMPT_PRIMARY" <<EOF
 - 风格原因：$picked_style_reason
 - 开头动作模型：$opening_mode
 - 风格模板：$style_template
+- 风格硬约束：$style_hard_mode
 - 故事引擎：${story_engine}（${story_engine_prompt}）
 - 主场景框架：${scene_frame}
 - 地方禁忌：${taboo_rule}
+- 主职业锚点：${job_anchor}
+- 主意象锚点：${imagery_anchor}
 - 强制想象轴：$pretty_selected_axes
 - 必须显式写进正文、且成为主骨架支点的陌生元素：$pretty_axis_details
 - 非人压力源：$nonhuman_pressure
@@ -114,8 +120,10 @@ cat > "$PROMPT_PRIMARY" <<EOF
 - 不要再写成旧题材的变体。让动物、植物、新职业、身体/物件变形、科幻装置或古怪宇宙规则真正进入主骨架。
 - 不要只写“异常发生了”，而要写一个人具体怎么工作、怎么吃饭、怎么走夜路、怎么闻到味、怎么手上沾东西、怎么被人敷衍过去。
 - 允许大胆，但不能乱。离奇必须附着在地方规矩、行业手艺、地形、水路、养殖、摊贩、照护、修补、迁徙、祭祀、交换、计数这些现实支点上。
+- 主职业必须明显是“${job_anchor}”，不要只把它当背景介绍。
 - 主场景必须落在“${scene_frame}”这一框架里，不要写成只在别处路过一下。
 - “${taboo_rule}” 不能只出现一句解释，必须至少实打实改变一次人物决定、行动顺序或代价。
+- “${imagery_anchor}” 必须在前半篇出现两次以上，并成为读者能记住的视觉/触觉钉子。
 - 如果第一反应是把产品种子写成包裹、驿站、扫码枪、快递单、系统面板，就强制放弃第一反应，改写第二种更陌生但更具体的落点。
 - 要有文学性，但别飘。句子要有压迫感、气味、材质、温度、重量。
 - 可以吸收这些高层优点：普通人卷入巨大而陌生的规则；黑色幽默一点点；世界观不说破；最后一句有寒意。
@@ -155,6 +163,8 @@ cat > "$PROMPT_FALLBACK" <<EOF
 - 本次故事引擎是：${story_engine}（${story_engine_prompt}）
 - 本次主场景框架：${scene_frame}
 - 本次地方禁忌：${taboo_rule}
+- 本次主职业锚点：${job_anchor}
+- 本次主意象锚点：${imagery_anchor}
 - 本次非人压力源：$nonhuman_pressure
 - 本次参考的现实火种：$picked_event / $picked_product
 - 开头动作模型：$opening_mode
@@ -203,7 +213,8 @@ cat > "$PROMPT_POLISH" <<EOF
 5. 让这次的故事引擎更清楚：${story_engine}（${story_engine_prompt}）
 6. 主场景必须明显落在“${scene_frame}”里，不要漂移成泛泛的小镇夜班
 7. “${taboo_rule}” 必须在具体行动中发作，而不是解释性旁白
-8. 如果故事偷懒回到“包裹、扫码、驿站、后台、名册”这类显眼近路，就把它改去更陌生的职业现场或地方规矩里
+8. “${job_anchor}” 和 “${imagery_anchor}” 必须变得更鲜明，而不是只出现一次
+9. 如果故事偷懒回到“包裹、扫码、驿站、后台、名册”这类显眼近路，就把它改去更陌生的职业现场或地方规矩里
 
 硬规则：
 - 标题不改
@@ -232,6 +243,7 @@ cat > "$PROMPT_DERUTIFY" <<EOF
 5. 把过于说明式的世界观解释改成传闻、动作、行话、物件细节
 6. 确保主场景仍然是“${scene_frame}”
 7. 确保“${taboo_rule}” 至少真实改变一次人物选择
+8. 确保“${job_anchor}” 和 “${imagery_anchor}” 没有被写成点缀
 
 不要：
 - 不要改标题
@@ -261,6 +273,7 @@ if [[ "$(jq -r '.should_rewrite // false' "$HOOK_REPORT" 2>/dev/null)" == "true"
 - 让故事引擎更早冒头：${story_engine}（${story_engine_prompt}）
 - 让主场景框架更早冒头：${scene_frame}
 - 让地方禁忌更早冒头：${taboo_rule}
+- 让主职业和主意象更早冒头：${job_anchor} / ${imagery_anchor}
 - 让陌生轴更早冒头：$pretty_axis_details
 - 不要写成旧套路：$pretty_banned_mechanisms
 - 直接输出修改后的完整正文
@@ -296,6 +309,9 @@ seed["story_engine"] = "$story_engine"
 seed["story_engine_prompt"] = "$story_engine_prompt"
 seed["scene_frame"] = "$scene_frame"
 seed["taboo_rule"] = "$taboo_rule"
+seed["job_anchor"] = "$job_anchor"
+seed["imagery_anchor"] = "$imagery_anchor"
+seed["style_hard_mode"] = "$style_hard_mode"
 seed["random_nonce"] = "$random_nonce"
 seed["generation_seed"] = "$SEED_NUM"
 seed["temperature"] = "$TEMPERATURE"
