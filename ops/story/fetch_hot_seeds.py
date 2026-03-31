@@ -118,6 +118,54 @@ STORY_ENGINES = {
         "prompt": "让身体上的细节被布料、木头、塑料、纸、骨头、气味或植物悄悄转写、保存、复制或孵化。",
         "fits": ["product-intrusion", "liaozhai-zhiguai", "urban-cold-dread"],
     },
+    "borrowed-season": {
+        "label": "借来的时令",
+        "prompt": "让某个季节性征候被提前、延后或借错地方，导致一整套地方规矩跟着失效。",
+        "fits": ["liaozhai-zhiguai", "county-uncanny", "social-dread"],
+    },
+    "pilgrim-route": {
+        "label": "走错路的朝圣",
+        "prompt": "让人沿着一条本来服务于贸易、祭祀、探访或巡回工作的路线，误入另一套旧秩序。",
+        "fits": ["liaozhai-zhiguai", "county-uncanny", "urban-cold-dread"],
+    },
+}
+
+SCENE_FRAMES = {
+    "social-dread": ["养老院值班室", "培训机构后勤间", "商场后场仓库", "社区食堂后厨", "夜间客服工位"],
+    "liaozhai-zhiguai": ["渡口夜路", "借宿老宅", "香火将尽的偏庙", "祠堂后院", "纸扎铺后屋"],
+    "county-uncanny": ["温室群深处", "水产养殖塘边", "沿河修车铺", "民宿背后的防空洞", "国道旁的流动摊位"],
+    "product-intrusion": ["样品间", "返修仓", "试播间", "夜间售后柜台", "旧货市场临时摊位"],
+    "urban-cold-dread": ["夜班医院走廊", "末班地铁换乘口", "商场打烊后的中庭", "老写字楼消防通道", "合租房公共厨房"],
+}
+
+TABOO_RULES = {
+    "liaozhai-zhiguai": [
+        "夜里有人报出全名时，不可回第二声",
+        "借来的灯不能照祠堂后墙",
+        "渡口边数到第七下水声就必须闭眼",
+        "旧纸扎一旦沾了唾沫就不能再烧",
+    ],
+    "county-uncanny": [
+        "流动车在镇上只停单数日，双数日看见也不能买",
+        "养殖塘边有人吹口哨时，不能跟着数拍子",
+        "夜班交接本若自己翻页，当班的人不能改最后一行",
+        "国道边捡来的活物，天亮前不能起名",
+    ],
+    "social-dread": [
+        "夜班表改到第三次，就不能再问上一班去了哪",
+        "加班餐里吃到第一根白丝时，不能把名字写进投诉群",
+        "当月考勤若被重算两次，当事人不能再碰原始记录",
+    ],
+    "product-intrusion": [
+        "试用样品一旦被人夸过三次，就不能再退回仓库",
+        "售后回访里听见自己的声音时，不能继续按确认键",
+        "展示机若在断网后还亮着，柜台里的人不能替它关机",
+    ],
+    "urban-cold-dread": [
+        "末班车广播报错站名后，下一站不能下车",
+        "公共监控里看见自己迟到的背影，第二天不能走同一扇门",
+        "急诊走廊若同时响三次呼叫铃，值班的人不能问姓名",
+    ],
 }
 
 MECHANISM_LIBRARY = {
@@ -219,6 +267,17 @@ def read_recent_axes(limit: int = 6) -> list[str]:
     return axes[:limit]
 
 
+def read_recent_axis_details(limit: int = 8) -> list[str]:
+    details: list[str] = []
+    for payload in read_recent_meta(limit * 2):
+        for detail in payload.get("axis_details", []):
+            if isinstance(detail, str) and detail not in details:
+                details.append(detail)
+        if len(details) >= limit:
+            break
+    return details[:limit]
+
+
 def read_recent_engines(limit: int = 5) -> list[str]:
     engines: list[str] = []
     for payload in read_recent_meta(limit * 2):
@@ -228,6 +287,17 @@ def read_recent_engines(limit: int = 5) -> list[str]:
         if len(engines) >= limit:
             break
     return engines
+
+
+def read_recent_scene_frames(limit: int = 5) -> list[str]:
+    scenes: list[str] = []
+    for payload in read_recent_meta(limit * 2):
+        scene = payload.get("scene_frame")
+        if isinstance(scene, str) and scene and scene not in scenes:
+            scenes.append(scene)
+        if len(scenes) >= limit:
+            break
+    return scenes
 
 
 def detect_banned_mechanisms(limit: int = 3) -> list[str]:
@@ -340,6 +410,7 @@ def choose_opening_mode(style_key: str) -> str:
 
 def choose_imagination_axes(style_key: str) -> tuple[list[str], list[str], str]:
     recent_axes = read_recent_axes()
+    recent_details = read_recent_axis_details()
     preferred = {
         "social-dread": ["new-jobs", "cosmic-rules", "animals", "plants"],
         "liaozhai-zhiguai": ["animals", "plants", "cosmic-rules", "body-object"],
@@ -363,7 +434,10 @@ def choose_imagination_axes(style_key: str) -> tuple[list[str], list[str], str]:
 
     random.shuffle(selected)
     selected = selected[: random.choice([2, 3])]
-    details = [random.choice(IMAGINATION_AXES[axis]) for axis in selected]
+    details = []
+    for axis in selected:
+        pool = [item for item in IMAGINATION_AXES[axis] if item not in recent_details] or IMAGINATION_AXES[axis]
+        details.append(random.choice(pool))
     nonhuman = random.choice(["动物", "植物", "器物", "水", "风", "菌", "地方禁忌", "计数规则"])
     return selected, details, nonhuman
 
@@ -388,6 +462,21 @@ def choose_story_engine(style_key: str, banned_mechanisms: list[str]) -> tuple[s
     return chosen, STORY_ENGINES[chosen]["prompt"]
 
 
+def choose_scene_frame(style_key: str) -> str:
+    recent = read_recent_scene_frames()
+    pool = SCENE_FRAMES.get(style_key, ["夜班岗位"])[:]
+    random.shuffle(pool)
+    for scene in pool:
+        if scene not in recent:
+            return scene
+    return pool[0]
+
+
+def choose_taboo_rule(style_key: str) -> str:
+    pool = TABOO_RULES.get(style_key, ["同样的话不要问第二遍"])
+    return random.choice(pool)
+
+
 def stable_random_nonce(event_title: str, product_title: str) -> int:
     material = f"{event_title}|{product_title}|{random.random()}".encode("utf-8")
     digest = hashlib.sha256(material).hexdigest()
@@ -409,6 +498,8 @@ def main() -> int:
     banned_mechanisms = detect_banned_mechanisms()
     axes, axis_details, nonhuman = choose_imagination_axes(style_key)
     story_engine_key, story_engine_prompt = choose_story_engine(style_key, banned_mechanisms)
+    scene_frame = choose_scene_frame(style_key)
+    taboo_rule = choose_taboo_rule(style_key)
     random_nonce = stable_random_nonce(event_title, product_title)
 
     payload["picked_style"] = {
@@ -426,6 +517,8 @@ def main() -> int:
     payload["story_engine_key"] = story_engine_key
     payload["story_engine"] = STORY_ENGINES[story_engine_key]["label"]
     payload["story_engine_prompt"] = story_engine_prompt
+    payload["scene_frame"] = scene_frame
+    payload["taboo_rule"] = taboo_rule
     payload["random_nonce"] = random_nonce
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0

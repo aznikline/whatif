@@ -37,14 +37,18 @@
 - the system scores them into a preferred style family
 - each style family carries its own opening template so the first paragraphs do not collapse into one generic voice
 - the pipeline now also selects a random `story engine` and a random `generation seed` to break deterministic fallback into the same old skeleton
+- the seed router now also selects a concrete `scene_frame` and one `taboo_rule`; both are hard constraints in the prompt, not optional flavor text
 - recent stories are scanned for overused mechanisms; the top repeated mechanisms become a blacklist for the next run
 - recent styles are read from prior `.meta.json` files to avoid repeating the same voice
-- each story stores `selected_style`, `style_reason`, `opening_mode`, `story_engine`, `selected_axes`, `banned_mechanisms`, and the generation seed in metadata
+- recent scene frames are also tracked so the next run avoids repeating the same main workplace / route / room when possible
+- each story stores `selected_style`, `style_reason`, `opening_mode`, `story_engine`, `scene_frame`, `taboo_rule`, `selected_axes`, `banned_mechanisms`, and the generation seed in metadata
 - the runtime script syncs `products/daily-horror/AGENT_SOUL.md` into the live workspace before generation
 - prompts now include a plausibility guard to suppress heavy-handed prices, numbers, and contrived symbolic setups
 - generation no longer depends on `openclaw agent`; the script calls the model directly and falls back locally if needed
 - after the first draft, the pipeline runs an editorial pass and then a dedicated de-rut pass to remove generic model habits
 - after polishing, an opening checker scores the first section; if the hook is too weak, the pipeline rewrites the opening once
+- the SOUL now explicitly bans consecutive reuse of the same main job, main scene, or stale mechanism cluster
+- Liaozhai-style branches must carry a concrete local taboo or route rule; cosmic-rule branches must produce an actionable rule with a visible cost, not abstract lore
 
 ## Sources
 - Google News RSS for current events
