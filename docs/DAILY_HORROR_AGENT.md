@@ -28,6 +28,9 @@
   - county-town / small-city uncanny tales
   - product-object / gadget intrusion horror
   - cold urban dread
+- horror details should feel lived-in before they feel symbolic
+- Liaozhai-inspired modes should grow from taboo, rumor, lineage, water routes, temples, trades, and old records rather than random spooky ornament
+- avoid conspicuous numeric symbolism or over-designed coincidences unless they are naturally motivated and paid off
 
 ## Generation Mechanics
 - one current event seed and one product seed are fetched first
@@ -35,6 +38,7 @@
 - recent styles are read from prior `.meta.json` files to avoid repeating the same voice
 - each story stores `selected_style`, `style_reason`, and `opening_mode` in metadata
 - the runtime script syncs `products/daily-horror/AGENT_SOUL.md` into the live workspace before generation
+- prompts now include a plausibility guard to suppress heavy-handed prices, numbers, and contrived symbolic setups
 
 ## Sources
 - Google News RSS for current events
