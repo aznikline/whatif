@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="/Users/wizout/op/openclaw"
+STATE_DIR="$ROOT/.openclaw-state"
+CONFIG_PATH="$STATE_DIR/openclaw.json"
+TODAY="${STORY_DATE_OVERRIDE:-$(date +%F)}"
+YEAR="${TODAY%%-*}"
+HARD_TIMEOUT="${DAILY_HORROR_HARD_TIMEOUT:-150}"
+STORY_DIR="$ROOT/stories/daily-horror/$YEAR"
+RUN_DIR="$ROOT/stories/daily-horror/.runs/$TODAY"
+OUT_FILE="$STORY_DIR/$TODAY.md"
+META_FILE="$STORY_DIR/$TODAY.meta.json"
+RAW_FILE="$RUN_DIR/agent.raw"
+JSON_FILE="$RUN_DIR/agent.json"
+TEXT_FILE="$RUN_DIR/agent.txt"
+SEED_FILE="$RUN_DIR/seeds.json"
+
+mkdir -p "$STORY_DIR" "$RUN_DIR"
+
+if [[ -f "$OUT_FILE" ]]; then
+  echo "story already exists: $OUT_FILE"
+  exit 0
+fi
+
+python3 "$ROOT/ops/story/fetch_hot_seeds.py" > "$SEED_FILE"
+
+picked_event="$(jq -r '.picked_event.title // empty' "$SEED_FILE")"
+picked_product="$(jq -r '.picked_product.title // empty' "$SEED_FILE")"
+news_titles="$(jq -r '.news[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
+product_titles="$(jq -r '.products[:3][]?.title' "$SEED_FILE" | paste -sd '; ' -)"
+recent_titles="$(
+  find "$ROOT/stories/daily-horror" -maxdepth 2 -name '*.md' -type f 2>/dev/null |
+    sort |
+    tail -n 5 |
+    while read -r f; do head -n 1 "$f"; done |
+    sed '/^$/d' |
+    paste -sd ';' -
+)"
+
+prompt_primary=$(cat <<EOF
+你是一位专精于斯蒂芬·金风格的惊悚小说作家。请直接写一篇完整中文短篇惊悚小说。
+
+写作铁律：
+1. 氛围第一，恐怖来自缓慢积累，而非突然惊吓。
+2. 主角必须是普通人，有真实弱点和琐碎烦恼。
+3. 故事发生在一个有名字的小镇或封闭社区，让地点成为角色。
+4. 用大量感官细节、内心自辩、接地气对话和少量黑色幽默。
+5. 恐怖处在超自然与现实交界，不要解释干净。
+6. 结尾不要恢复平静，最后一句要留下寒意。
+
+结构节奏：
+- 开篇约300字：日常与微小异常
+- 发展约800字：异常升级，找到旧事线索
+- 高潮约400字：面对恐怖核心
+- 余波约200字：幸存但代价留下
+
+输出要求：
+- 直接输出故事正文
+- 第一行必须是标题
+- 使用第三人称有限视角，可少量第一人称内心独白
+- 字数 1500-2500
+- 不要提纲，不要解释，不要代码块
+
+今天的热点线索：
+- 事件候选：$picked_event
+- 产品候选：$picked_product
+- 其他新闻标题：$news_titles
+- 其他产品标题：$product_titles
+
+使用规则：
+- 只把热点当作灵感种子，不要写成新闻改写
+- 可以把热点事件转成小镇流言、直播事故、社区恐慌、旧商业街传闻
+- 可以把热门产品转成道具、玩具、直播设备、应用、智能硬件或廉价促销品
+- 不要直接复用近期标题：$recent_titles
+
+默认优先把“热点事件 + 热门产品”揉成一个恐怖种子。
+EOF
+)
+
+prompt_fallback=$(cat <<EOF
+写一篇 1500-2200 字的中文惊悚短篇小说，直接输出故事正文。
+
+强制种子：
+- 热点事件：$picked_event
+- 热门产品：$picked_product
+
+要求：
+- 第一行必须是中文标题
+- 小镇或封闭社区背景
+- 普通人主角
+- 缓慢积累的恐怖
+- 不要解释，不要提纲
+- 结尾最后一句必须发冷
+- 不要复用近期标题：$recent_titles
+EOF
+)
+
+run_agent_once() {
+  local prompt="$1"
+  local raw_file="$2"
+  local pid=""
+  local watcher=""
+  local status=0
+
+  (
+    OPENCLAW_STATE_DIR="$STATE_DIR" OPENCLAW_CONFIG_PATH="$CONFIG_PATH" \
+      openclaw agent --local --agent daily-horror --message "$prompt" --json --timeout 120
+  ) > "$raw_file" 2>&1 &
+  pid=$!
+
+  (
+    sleep "$HARD_TIMEOUT"
+    kill -TERM "$pid" 2>/dev/null || true
+  ) &
+  watcher=$!
+
+  wait "$pid" || status=$?
+  kill -TERM "$watcher" 2>/dev/null || true
+  wait "$watcher" 2>/dev/null || true
+  return "$status"
+}
+
+extract_text() {
+  sed -n '/^{/,$p' "$RAW_FILE" > "$JSON_FILE"
+  jq -r '.payloads[0].text // empty' "$JSON_FILE" > "$TEXT_FILE"
+  [[ -s "$TEXT_FILE" ]]
+}
+
+if ! run_agent_once "$prompt_primary" "$RAW_FILE" || ! extract_text; then
+  mv "$RAW_FILE" "$RUN_DIR/agent.primary.raw" 2>/dev/null || true
+  mv "$JSON_FILE" "$RUN_DIR/agent.primary.json" 2>/dev/null || true
+  mv "$TEXT_FILE" "$RUN_DIR/agent.primary.txt" 2>/dev/null || true
+  if ! run_agent_once "$prompt_fallback" "$RAW_FILE" || ! extract_text; then
+    echo "daily-horror produced empty output" >&2
+    exit 1
+  fi
+fi
+
+cp "$TEXT_FILE" "$OUT_FILE"
+cp "$SEED_FILE" "$META_FILE"
+python3 "$ROOT/ops/story/update_story_index.py"
+
+git -C "$ROOT" add "$OUT_FILE" "$META_FILE" "$ROOT/stories/daily-horror/README.md"
+if ! git -C "$ROOT" diff --cached --quiet; then
+  git -C "$ROOT" commit -m "story: daily horror for $TODAY"
+  git -C "$ROOT" push origin master
+fi
+
+echo "$OUT_FILE"
